@@ -45,13 +45,34 @@ stop_words += list(string.punctuation)
 # nltk.download('punkt')
 # nltk.download('wordnet')
 
-
-
+from functions.nlp_eda import *
+from pathlib import Path
 
 
 
 #################################CLEANING#####################################
 
+
+def clean_tweet_text(raw:Path, text_col_raw:str='tweet_text')->tuple:
+    """Wrapper fn for NLProc cleaning functions inside nlp_eda
+
+    Args:
+        raw (Path): path to raw data csv
+        text_col_raw (str, optional): Column containing tweets. Defaults to 'tweet_text'.
+
+    Returns:
+        tuple: (clean dataframe, scikit-learn count vectorizer object)
+    """    
+
+    clean = etl_tweet_text(raw, text_col_raw)
+
+    text_col_clean = f'clean_{text_col_raw}'
+
+    clean_cvt, cvt = get_count_vectorized_df(clean, text_col_clean)
+
+    clean = clean.join(clean_cvt)
+
+    return clean, cvt
 
 
 
