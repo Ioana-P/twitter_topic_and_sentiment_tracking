@@ -21,7 +21,8 @@ from sklearn.decomposition import LatentDirichletAllocation as LDA
 # import pickle 
 # import pyLDAvis
 
-tokenizer = RegexpTokenizer(r'\b[A-Za-z0-9\-]{1,}\b')
+tokenizer = RegexpTokenizer(r'\b[A-Za-z0-9\-]{2,}\b')
+# tokenizer = RegexpTokenizer(r"\s+", gaps=True)
 default_tk = tokenizer
 # gen_stop_words = list(set(stopwords.words("english")))
 # gen_stop_words += list(set(stopwords.words('french')))
@@ -62,6 +63,7 @@ def generate_stop_words_by_language(lst_languages:list)->list:
 lst_languages = ['english', 'french', 'spanish', 'german', 'spanish', 'russian']
 gen_stop_words = generate_stop_words_by_language(lst_languages)
 
+gen_stop_words.extend(['amp', '&amp', '’',])
 
 class LemmaTokenizer(object):
     def __init__(self, tokenizer = default_tk, stopwords = gen_stop_words):
@@ -76,6 +78,24 @@ class LemmaTokenizer(object):
     
 
 lemmy = LemmaTokenizer()
+
+def apply_tfidf_and_return_table(tfidf:TfidfVectorizer, df:pd.DataFrame, text_col:str)->pd.DataFrame:
+    """Fn takes in dataframe, with specified text column, an instantiated sklearn tfidf-vectorizer 
+    and the dataframe with tf-idf data joined onto the original data
+
+    Args:
+        tfidf (TfidfVectorizer): sklearn tfidf vectorizer instance
+        df (pd.DataFrame): dataframe
+        text_col (str): text column we wish to tokenizer and analyse
+
+    Returns:
+        pd.DataFrame: dataframe where df is joined onto the tfidf_df
+    """    
+    tfidf_df = pd.DataFrame(tfidf.fit_transform(df[text_col]).toarray(), index = df.index, columns = tfidf.get_feature_names_out())
+
+    full_df = df.join(tfidf_df)
+    
+    return full_df
 
 def apply_tfidf_and_return_table_of_results(tfidf:TfidfVectorizer, df:pd.DataFrame, text_col:str)->pd.DataFrame:
     """Fn takes in dataframe, with specified text column, an instantiated sklearn tfidf-vectorizer 
@@ -162,7 +182,7 @@ def apply_tfidf_and_return_grouped_table_of_results(tfidf:TfidfVectorizer, df:pd
 
 def get_tfidf_grouped_scores(df:pd.DataFrame, text_col:str,group_col:str, ngram_range:tuple=(1,2), 
                     tokenizer=tokenizer.tokenize, stopwords:list=gen_stop_words, 
-                    min_doc_frequency:float=0.01, max_doc_frequency:float = 1.0,
+                    min_doc_frequency:float=0.005, max_doc_frequency:float=0.95,
                     smooth_idf:bool=False,
                     )->pd.DataFrame:
 
@@ -178,7 +198,7 @@ def get_tfidf_grouped_scores(df:pd.DataFrame, text_col:str,group_col:str, ngram_
 
 def get_tfidf_scores(df:pd.DataFrame, text_col:str, ngram_range:tuple=(1,2), 
                     tokenizer=tokenizer.tokenize, stopwords:list=gen_stop_words, 
-                    min_doc_frequency:float=0.01, max_doc_frequency:float = 1.0,
+                    min_doc_frequency:float=0.005, max_doc_frequency:float=0.95,
                     smooth_idf:bool=False,
                     )->pd.DataFrame:
 
@@ -192,9 +212,25 @@ def get_tfidf_scores(df:pd.DataFrame, text_col:str, ngram_range:tuple=(1,2),
 
     return apply_tfidf_and_return_table_of_results(tfidf, df, text_col)
 
+def get_tfidf_df(df:pd.DataFrame, text_col:str, ngram_range:tuple=(1,2), 
+                    tokenizer=tokenizer.tokenize, stopwords:list=gen_stop_words, 
+                    min_doc_frequency:float=0.005, max_doc_frequency:float=0.95,
+                    smooth_idf:bool=False,
+                    )->pd.DataFrame:
+
+
+    tfidf = TfidfVectorizer(tokenizer=tokenizer, 
+                            ngram_range=ngram_range, 
+                            min_df=min_doc_frequency, 
+                            max_df=max_doc_frequency,
+                            smooth_idf=smooth_idf,
+                            stop_words=stopwords)
+
+    return apply_tfidf_and_return_table(tfidf, df, text_col)
+
 def get_count_vectorized_df(df:pd.DataFrame, text_col:str, ngram_range:tuple=(1,2), 
                     tokenizer=lemmy, stopwords:list=gen_stop_words, 
-                    min_doc_frequency:float=0.01, max_doc_frequency:float = 1.0,
+                    min_doc_frequency:float=0.005, max_doc_frequency:float=0.95,
                     )->pd.DataFrame:
 
 
@@ -210,7 +246,7 @@ def get_count_vectorized_df(df:pd.DataFrame, text_col:str, ngram_range:tuple=(1,
 def calculate_and_plot_tfidf(input_dir:Path, output_dir:Path, top_n:int, text_col_raw :str, tokenizer=tokenizer.tokenize, 
                             stopwords:list=gen_stop_words, 
                             ngram_range:tuple=(1,2),
-                        min_doc_frequency:float=0.01, max_doc_frequency:float = 1.0,
+                        min_doc_frequency:float=0.005, max_doc_frequency:float=0.95,
                         smooth_idf:bool=False,):
     """Pulls up the csv file containing the tweet texts, cleans, tokenizes and vectorizes
     the text data and outputs (and returns) a plotly_express graph of the top_n terms by 
@@ -550,10 +586,27 @@ def remove_linkable_features(df:pd.DataFrame, text_col:str='tweet_text')->pd.Dat
 
     df[clean_col] = df[clean_col].apply(lambda x: re.subn('#[a-zA-Z0-9]{1,140}','', x)[0] if isinstance(x,str) else x)
 
+    # final bit of text cleaning
+    punct_lst = list(string.punctuation)
+    punct_lst.append('’')
+    df[clean_col] = df[clean_col].apply(lambda x : clean_up_text(x, punct_lst))
+
     return df
 
-def extract_and_remove_linkable_features(df:pd.DataFrame, text_col:str='tweet_text'):
+def clean_up_text(x:str, punct_lst:list):
+    if x!=x:
+        return x
+    
+    
+    x = x.replace('\n', '')
+    for punct in punct_lst:
+        x = x.replace(punct, '')
+    x= x.strip()
+    return x
 
+
+def extract_and_remove_linkable_features(df:pd.DataFrame, text_col:str='tweet_text'):
+    
     return remove_linkable_features(extract_linkable_features(df, text_col))
 
 
@@ -572,7 +625,7 @@ def main(input_dir:str, output_dir:str,
         
 
     #get and plot tfidf
-    calculate_and_plot_tfidf(input_dir, output_dir, 20, text_col_raw, min_doc_frequency=0.01, max_doc_frequency=0.9)
+    calculate_and_plot_tfidf(input_dir, output_dir, 20, text_col_raw, min_doc_frequency=0.005, max_doc_frequency=0.9)
 
     #term frequency as well
 
