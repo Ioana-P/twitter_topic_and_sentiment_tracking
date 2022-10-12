@@ -30,9 +30,9 @@ ui <- dashboardPage(
     tabItems(
       # First tab content
       tabItem(tabName = "dashboard",
-              # introductory texxt
+              # introductory text
               h1('Analysing public attitudes using Twitter data'),
-              p("The data for this dashboard was collected on Tuesday 11th Oct using the Blattodea tool."),
+              p("The data for this dashboard was collected on Tuesday 11th Oct using the ", tags$a(href="https://github.com/digital-scrappy/network-analysis-hackathon", "Blattodea tool.")),
               p("The tool is an wrapper for snscrape that pulls Tweets from a searched user and the tweets from a customizable number of people within their network. The tool also retrieves the tweet content, including some stats about the Tweet at the time of collection (e.g. nr of likes, retweets). The users that were initially searched for were @elonmusk and @ZelenskyyUa. The reasons behind this was that I wanted to try to answer the following:"),
               p("   1. Have most recent controversial tweets by the former had any impact that could be seen at the level of tweet metadata?"),
               p("   2. Has been any change in the tweet metadata of for the latter, especially after his response to @elonmusk's controversial twitter poll?"),
@@ -40,37 +40,58 @@ ui <- dashboardPage(
               p("For the last point, @elonmusk is a good choice, since he has a tendency to tweet about a variety of divergent topics."),
               br(),
             
+              #currently will not work, but will figure this out at some pt
+              # fluidRow(
+              #   box(pickerInput(
+              #     'selected_disp_name', label='Which of the main users to show?', 
+              #     choices= c(
+              #       'ElonMusk',
+              #       'ZelenskyyUa'
+              #     ), 
+              #     selected = c("ElonMusk"), 
+              #     options = list(`actions-box` = TRUE),
+              #     multiple = T
+              #   ))
+              # ), 
+              
+              fluidRow(
+                box(pickerInput('tweet_stats_variable', label='Which Twitter Stats to show', 
+                                choices = c('Number of likes', 
+                                            'Number of retweets', 
+                                            'Number of responses'
+                                ),
+                                selected=c("Number of responses"),
+                                options = list(`actions-box` = TRUE),
+                                multiple = T
+                )), 
+                box(textInput('search_term_tweets', label='Only show tweets with this in them:',
+                              value="*")
+                )
+              ),
+              
+              fluidRow(
+                box(plotlyOutput('TS_tweet_stats', height=450, width="100%"), width=12)
+              ),
+              
+              
+              
               # next row 
               fluidRow(
                 box(plotlyOutput('before_and_after_mean_plot', height=300)), 
                 box(plotOutput('before_and_after_boxplot', height=300))
               ),
               
-              fluidRow(
-                box(pickerInput('tweet_stats_variable', label='Which Twitter Stats for @elonmusk to show', 
-                                choices = c('Number of likes', 
-                                            'Number of retweets', 
-                                            'Number of responses'
-                                            ),
-                                selected=c("Number of responses"),
-                                options = list(`actions-box` = TRUE),
-                                multiple = T
-                                ))
-                ),
-              
-              fluidRow(
-                box(plotlyOutput('TS_tweet_stats', height=450, width="100%"), width=12)
-              ),
+  
               
               fluidRow(
                 box(
                   # title='Accounts with most followers within dataset',
-                  sliderInput('N_slider_followers', 'Most followers: Number of accounts', 0, 100, 20),
+                  sliderInput('N_slider_followers', 'Who has the most followers: Number of accounts to show', 0, 100, 20),
                   height = 100
                 ) ,
                 box(
                   # title='Accounts with most followers within dataset',
-                  sliderInput('N_slider_posts', 'Most posts: Number of accounts', 0, 100, 20),
+                  sliderInput('N_slider_posts', 'Who has the most posts: Number of accounts to show', 0, 100, 20),
                   height = 100
                 )
               ),
@@ -104,7 +125,7 @@ ui <- dashboardPage(
               h2("The Cleaned Twitter Data"),
               
               fluidPage(
-               mainPanel(title='Clean_data', dataTableOutput('Clean_data')
+               mainPanel(  title='Clean_data', dataTableOutput( 'Clean_data', width='100%'), width=12)
                
               )
       )
@@ -113,7 +134,7 @@ ui <- dashboardPage(
   
 )
 )
-)
+
 
 
 
@@ -128,16 +149,17 @@ server <- function(input, output) {set.seed(122)
   df <- read.csv('../data/raw/user_attributes.csv')
   df <- distinct(df) 
   top_n <- 20
-  print(names(df))
+  # print(names(df))
   df<- df %>%
     dplyr::rename(
       Handle = X,
       Followers =  X.followers,
       Posts = X.posts,
       Friends = X.friends,
-      Verified = verified
+      Verified = verified,
+      Display_name = display.name
     )
-  print(names(disp_df))
+  # print(names(disp_df))
   disp_df<- disp_df %>%
     dplyr::rename(
       Display_name = display_name,
@@ -146,6 +168,9 @@ server <- function(input, output) {set.seed(122)
       Number_responses = X.responses
     )
   
+  # will figure this out at some point
+  # selected_account= observe({input$selected_disp_name} )
+    
   df$Verified <- gsub('True', 'Verified', df$Verified)
   df$Verified <- gsub('False', 'Not verified', df$Verified)
   
@@ -154,7 +179,10 @@ server <- function(input, output) {set.seed(122)
 
   #now another dataframe which handles number of likes before and after event
   # target_df <- subset(disp_df,  grepl(targets, extracted_twitter_handles))
-  target_df <- subset(disp_df, Display_name=='ElonMusk')
+  # here we take the input, from the selector
+  
+  selected_account <- 'ElonMusk'
+  target_df <- subset(disp_df, Display_name==selected_account)
   
   # now groupby and sum
   
@@ -263,8 +291,9 @@ server <- function(input, output) {set.seed(122)
                                   '<br><b># followers</b>:%{text}<br>'
             )
     )%>% 
-      layout(yaxis = list(categoryorder = "total ascending", list(title=NA) ), 
-             xaxis = list(title=NA)
+      layout(yaxis = list(categoryorder = "total ascending", 
+                          title=NA), 
+             xaxis = list(title=NA) 
                           ) %>%
       config(modeBarButtons = list(list("toImage")), displaylogo = FALSE, toImageButtonOptions = list(filename = "plotOutput.png"))
   })
@@ -277,7 +306,7 @@ server <- function(input, output) {set.seed(122)
                        fill= `Before or after controversial tweet`),
                    stat='identity', position='dodge')+
           labs(title='Before and after @elonmusk\'s poll', 
-               subtitle = 'How have the average stats for Elon\'s Tweets changed\nafter his poll on the war?',
+               subtitle = paste('How have the average stats for ', selected_account, '\'s Tweets changed\nafter his poll on the war?'),
                y = '', 
                x='')+
           # coord_flip()+
@@ -325,7 +354,7 @@ server <- function(input, output) {set.seed(122)
         outlier.fill='white',
         position= position_dodge(width =0.9))+
       
-      labs(title='Before and after the poll (excluding extreme outliers)', 
+      labs(title='Before and after the poll\n(excluding extreme outliers)', 
            subtitle = 'How have the average stats for Elon\'s Tweets\nchanged after his poll on the war?', 
            x = '', 
            y='')+
@@ -333,7 +362,7 @@ server <- function(input, output) {set.seed(122)
       theme_minimal()+
       coord_flip()+
       theme(legend.title=element_blank(),
-            text = element_text(family = 'Open Sans')
+            text = element_text(family = 'Open Sans', size=16, face='bold')
             # axis.text.x=element_text(angle=45, vjust=1.5, hjust=1)
             )
     
@@ -342,7 +371,8 @@ server <- function(input, output) {set.seed(122)
   
   output$TS_tweet_stats <- renderPlotly({
     plot_ly(
-      data=subset(time_target_melt, variable==input$tweet_stats_variable), 
+      data = time_target_melt %>% dplyr::filter(grepl(input$search_term_tweets, clean_tweet_text, ignore.case=TRUE)) %>%
+        subset(variable==input$tweet_stats_variable),
       x = ~DT, 
       y = ~value,
       color=~variable,
@@ -350,13 +380,11 @@ server <- function(input, output) {set.seed(122)
       hovertemplate = paste('<br><b>Date</b>:%{x}',
                             # '<br><b>%{color}</b>: '
                             '<br>%{y}',
-                            '<br><b>Text</b>:%{text}',
-      title="How have @elonmusk\'s tweets fared in this period?"
-      ),
+                            '<br><b>Text</b>:%{text}'),
       type = 'scatter', mode='markers')  %>% 
       layout(yaxis=list(title=NA), 
              xaxis = list(title=NA), 
-             title = list(title="How have @elonmusk\'s tweets fared in this period?", 
+             title = list(title=paste("How have the states for ", selected_account, "\'s tweets changed in this period?"), 
                         xanchor = "right") )
   })
   
