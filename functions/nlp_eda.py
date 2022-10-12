@@ -7,7 +7,7 @@ import nltk
 import string
 
 from nltk.corpus import stopwords
-from nltk import FreqDist
+from nltk import FreqDist, text
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 import re
@@ -20,6 +20,8 @@ from sklearn.decomposition import LatentDirichletAllocation as LDA
 # from pyLDAvis import sklearn as sklearn_lda
 # import pickle 
 # import pyLDAvis
+
+import html
 
 tokenizer = RegexpTokenizer(r'\b[A-Za-z0-9\-]{2,}\b')
 # tokenizer = RegexpTokenizer(r"\s+", gaps=True)
@@ -63,7 +65,7 @@ def generate_stop_words_by_language(lst_languages:list)->list:
 lst_languages = ['english', 'french', 'spanish', 'german', 'spanish', 'russian']
 gen_stop_words = generate_stop_words_by_language(lst_languages)
 
-gen_stop_words.extend(['amp', '&amp', '’',])
+gen_stop_words.extend(['amp', '&amp', '’', '&amp;'])
 
 class LemmaTokenizer(object):
     def __init__(self, tokenizer = default_tk, stopwords = gen_stop_words):
@@ -297,10 +299,24 @@ def etl_tweet_text(input_dir:Path, text_col_raw:str='tweet_text')->pd.DataFrame:
     """    
     fpath = input_dir/ Path('tweet_text.csv')
     df = pd.read_csv(str(fpath))
+    df[text_col_raw] = df[text_col_raw].apply(lambda x: convert_html_entities_to_unicode(x))
     df = extract_and_remove_linkable_features(df, text_col_raw)
     return df
 
-# def 
+def extract_specific_str(x:str)->str:
+    spec = {'&amp;':'&',
+            '&quot;' : '\"', 
+            '&lt;': '>', 
+            '&gt;' : '<'
+    }
+    for sp, repl in spec.items():
+        x = x.replace(sp, repl)
+    return x
+
+def convert_html_entities_to_unicode(text):
+    """Converts HTML entities to unicode.  For example '&amp;' becomes '&'."""
+    text = html.unescape(text)
+    return text
 
 
 def plot_tfidf_dist(data :pd.DataFrame, output_dir : Path,  top_n:int=20):
