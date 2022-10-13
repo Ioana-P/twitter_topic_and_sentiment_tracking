@@ -8,6 +8,7 @@ library(scales)
 library(reshape)
 library(shinyWidgets)
 
+
 ui <- dashboardPage(
   # def theme
   skin = 'blue',
@@ -19,9 +20,9 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
-      menuItem("Clustering", tabName = "clustering", icon = icon("asterisk")),
+      menuItem("Topics", tabName = "topics", icon=icon('asterisk')),
       menuItem("Data", tabName = "data", icon = icon("th"))
-    )
+      )
     
     ),
   
@@ -100,30 +101,32 @@ ui <- dashboardPage(
                 box(plotlyOutput('followers_barplot')), 
                 box(plotlyOutput('posts_barplot'))
               )
-            
-            
               
       ),
       
       
-      # Second tab content
-      tabItem(tabname = 'clustering',
-              h2('Cluster Analysis'),
-
-
-              fluidPage(
-                mainPanel(title='Cluster_analysis',
-                          plotlyOutput('graph')
-                          )
-              )
+      # Third tab content
+      tabItem(tabName = "topics",
+              h2("Topic Modelling"),
+              p('I used the open-source ', tags$a(href="https://github.com/digital-scrappy/network-analysis-hackathon", "BertTopic"), 'tool to mine the text data for emergent topics'),
+              # more paragraphs here detailing experimentation, params, etc..
+              br(),
+              
+              fluidRow(
+                box(
+                  htmlOutput('topics_dash'),
+                  title='Topic Analysis',
+                  width=12
+                )
+              ),
+              
+              
       ),
-
 
       
       # Third tab content
       tabItem(tabName = "data",
               h2("The Cleaned Twitter Data"),
-              
               fluidPage(
                mainPanel(  title='Clean_data', dataTableOutput( 'Clean_data', width='100%'), width=12)
                
@@ -143,7 +146,17 @@ server <- function(input, output) {set.seed(122)
   
   
   ### DATA ETL AND WRANGLING HERE #########################################
-  disp_df <- read.csv('../data/clean/clean_display_data.csv')
+  
+  topics_fpath <- 'viz_topics_22_10_13_1st.html'
+  get_html_viz<-function(fpath) {
+    return(includeHTML(fpath))
+  }
+  
+  output$topics_dash <- renderUI({get_html_viz(topics_fpath)})
+  
+  
+  
+  disp_df <- read.csv('../data/clean/clean_text_and_metadata.csv')
 
   #getting user summary stats
   df <- read.csv('../data/raw/user_attributes.csv')
@@ -185,7 +198,7 @@ server <- function(input, output) {set.seed(122)
   target_df <- subset(disp_df, Display_name==selected_account)
   
   # now groupby and sum
-  
+  print(names(target_df))
   target_mean <- target_df %>% group_by(Before_or_after_controversy) %>%
     summarise('Number of likes' = mean(Number_likes),
               'Number of retweets' = mean(Number_retweets),
@@ -202,10 +215,11 @@ server <- function(input, output) {set.seed(122)
                                                                    levels = c('Before', 'After'))
   
                                                  
-                                                                   
+  print(names(target_df))
+  
   ## dataframe for boxplot
   target_df <- target_df %>%
-    rename( 'Number of likes' = 'Number_likes', 
+    dplyr::rename( 'Number of likes' = 'Number_likes', 
             'Number of retweets' = 'Number_retweets', 
             'Number of responses' = 'Number_responses')
   
