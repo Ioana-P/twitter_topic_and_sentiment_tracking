@@ -17,15 +17,14 @@ trigram_measures = nltk.collocations.TrigramAssocMeasures()
 import plotly_express as px
 
 from sklearn.decomposition import LatentDirichletAllocation as LDA
-# from pyLDAvis import sklearn as sklearn_lda
-# import pickle 
-# import pyLDAvis
+from pyLDAvis import sklearn as sklearn_lda
+import pickle 
+import pyLDAvis
 
 import html
 
-tokenizer = RegexpTokenizer(r'\b[A-Za-z0-9\-]{2,}\b')
+# tokenizer = RegexpTokenizer(r'\b[A-Za-z0-9\-]{2,}\b')
 # tokenizer = RegexpTokenizer(r"\s+", gaps=True)
-default_tk = tokenizer
 # gen_stop_words = list(set(stopwords.words("english")))
 # gen_stop_words += list(set(stopwords.words('french')))
 # gen_stop_words += list(set(stopwords.words('german')))
@@ -35,6 +34,9 @@ default_tk = tokenizer
 # gen_stop_words += list(string.punctuation)
 
 from pathlib import Path
+
+tokenizer = RegexpTokenizer(r'\b[A-Za-z0-9\-]{2,}\b')
+default_tk = tokenizer
 
 def generate_stop_words_by_language(lst_languages:list)->list:
     """Returns a list with stopwords from different languages, based on 
@@ -78,6 +80,7 @@ class LemmaTokenizer(object):
     def tokenize(self, articles):
         return [self.wnl.lemmatize(token) for token in self.tokenizer.tokenize(articles) if token not in self.stopwords]
     
+default_tk = tokenizer
 
 lemmy = LemmaTokenizer()
 
@@ -218,6 +221,7 @@ def get_tfidf_df(df:pd.DataFrame, text_col:str, ngram_range:tuple=(1,2),
                     tokenizer=tokenizer.tokenize, stopwords:list=gen_stop_words, 
                     min_doc_frequency:float=0.005, max_doc_frequency:float=0.95,
                     smooth_idf:bool=False,
+                    id_col:str='tweet_id',
                     )->pd.DataFrame:
 
 
@@ -227,6 +231,9 @@ def get_tfidf_df(df:pd.DataFrame, text_col:str, ngram_range:tuple=(1,2),
                             max_df=max_doc_frequency,
                             smooth_idf=smooth_idf,
                             stop_words=stopwords)
+
+    df.dropna(subset=[id_col], inplace=True)
+    df.set_index(id_col, inplace=True)
 
     return apply_tfidf_and_return_table(tfidf, df, text_col)
 
