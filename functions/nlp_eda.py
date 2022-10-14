@@ -306,6 +306,13 @@ def etl_tweet_text(input_dir:Path, text_col_raw:str='tweet_text')->pd.DataFrame:
     """    
     fpath = input_dir/ Path('tweet_text.csv')
     df = pd.read_csv(str(fpath))
+    files = os.listdir(input_dir)
+    if 'tweet_text_addition.csv' in files:
+        fpath = input_dir/ Path('tweet_text_addition.csv')
+        extra = df = pd.read_csv(str(fpath))
+        df = pd.concat([df, extra], axis=0)
+        df.drop_duplicates(subset=['tweet_id'], inplace=True)
+
     df[text_col_raw] = df[text_col_raw].apply(lambda x: convert_html_entities_to_unicode(x))
     df = extract_and_remove_linkable_features(df, text_col_raw)
     return df

@@ -76,13 +76,13 @@ def clean_tweet_text(raw:Path, text_col_raw:str='tweet_text')->tuple:
 
 
 def is_it_before_or_after(x, date):
-    try:
-        if x<=date:
-            return 'Before'
-        else:
-            return 'After'
-    except: # (ValueError, ParserError):
-        return np.NAN
+    # try:
+    if x<=date:
+        return 'Before'
+    else:
+        return 'After'
+    # except: # (ValueError, ParserError):
+    #     return np.NAN
 
 #################################API-REQUESTS#####################################
 

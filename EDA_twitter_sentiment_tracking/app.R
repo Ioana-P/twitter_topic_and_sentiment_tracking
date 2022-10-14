@@ -65,6 +65,15 @@ ui <- dashboardPage(
                                 options = list(`actions-box` = TRUE),
                                 multiple = T
                 )), 
+                box(pickerInput('by_or_at_musk_select', label='By @elonmusk/Mentions @elonmusk', 
+                    choices = c('Mentions @elonmusk', 
+                                'By @elonmusk'
+                                ),
+                    selected=c('By @elonmusk'),
+                    options = list(`actions-box` = TRUE),
+                    multiple = T
+                    )
+                ),
                 box(textInput('search_term_tweets', label='Only show tweets with this in them:',
                               value="*")
                 )
@@ -110,17 +119,29 @@ ui <- dashboardPage(
               h2("Topic Modelling"),
               p('I used the open-source ', tags$a(href="https://github.com/digital-scrappy/network-analysis-hackathon", "BertTopic"), 'tool to mine the text data for emergent topics'),
               # more paragraphs here detailing experimentation, params, etc..
+              p('The topics you see in the table and first plot were created automatically by BERTopic, except for a small amount of augmentation done manually by me after running the model. Originally there'),
+              p('were more topics in the plot you can see (the table on the right shows all the original ones). There were a few dense clusters of topics with very similar meanings that were almost entirely'),
+              p('overlapping on the plot - most notably topics 1, 10, 29 and 46, which are all related to Russia\'s invasion of Ukraine and its consequences). '),
+              p('I used a pre-trained transformer model to encode the tweets as embeddings, then these were passed to BertTopic to create clusters and identify topics.'),
               br(),
               
               fluidRow(
                 box(
-                  htmlOutput('topics_dash'),
+                  htmlOutput('topics_dash', width=5),
                   title='Topic Analysis',
-                  width=12
+                  width=7
+                ),
+                box(
+                  dataTableOutput('topics_table', width='100%'), width=5
                 )
               ),
-              
-              
+          
+                p("@article{grootendorst2022bertopic"),
+                p("        title={BERTopic: Neural topic modeling with a class-based TF-IDF procedure},"),
+                p("        author={Grootendorst, Maarten}"),
+                p("        journal={arXiv preprint arXiv:2203.05794},"),
+                p("        year={2022}}")
+
       ),
 
       
@@ -147,7 +168,7 @@ server <- function(input, output) {set.seed(122)
   
   ### DATA ETL AND WRANGLING HERE #########################################
   
-  topics_fpath <- 'viz_topics_22_10_13_1st.html'
+  topics_fpath <- 'viz_topics_22_10_14_redux.html'
   get_html_viz<-function(fpath) {
     return(includeHTML(fpath))
   }
@@ -156,11 +177,31 @@ server <- function(input, output) {set.seed(122)
   
   
   
-  disp_df <- read.csv('../data/clean/clean_text_and_metadata.csv')
-
+  topics_df<-read.csv('../data/preds/topic_model_table.csv')
+  topics_df <- topics_df[c("Topic","Count","Name")]
+  topics_df <- subset(topics_df, Topic!=-1)
+  topics_df <- topics_df[order(-topics_df$Count),]
+  
+  output$topics_table<-renderDataTable({
+                                      topics_df
+                                        }, 
+                                        filter='top',
+                                        rownames=FALSE,
+                                        options = list(scrollX = TRUE)
+                                        )
+                                      
+  
+  
+  # disp_df <- read.csv('../data/clean/clean_text_and_metadata.csv')
+  disp_df <- read.csv('../data/clean/dashboard_data.csv')
+  
   #getting user summary stats
   df <- read.csv('../data/raw/user_attributes.csv')
   df <- distinct(df) 
+  head(df, 2)
+  #subset for only those users in the main dashboard data
+  df <- subset(df, X %in% disp_df$display_name)
+  
   top_n <- 20
   # print(names(df))
   df<- df %>%
@@ -190,11 +231,13 @@ server <- function(input, output) {set.seed(122)
   countfollow <- df[c('Handle', 'Followers','Posts', 'Verified')][order(df$Followers, decreasing=TRUE),]
   countpost <- df[c('Handle', 'Posts','Followers', 'Verified')][order(df$Posts, decreasing=TRUE),]
 
+  
+  print('Got counts of followers and posts')
   #now another dataframe which handles number of likes before and after event
   # target_df <- subset(disp_df,  grepl(targets, extracted_twitter_handles))
   # here we take the input, from the selector
   
-  selected_account <- 'ElonMusk'
+  selected_account <- 'elonmusk'
   target_df <- subset(disp_df, Display_name==selected_account)
   
   # now groupby and sum
@@ -206,6 +249,9 @@ server <- function(input, output) {set.seed(122)
     )
   target_mean <- as.data.frame(target_mean)
   
+  print('Created target_mean data')
+  print(names(target_mean))
+  
   target_mean <- target_mean %>% 
     dplyr::rename('Before or after controversial tweet' = Before_or_after_controversy)
   #melt it so it's easier to plot
@@ -214,8 +260,8 @@ server <- function(input, output) {set.seed(122)
   target_mean_melt$`Before or after controversial tweet` <- factor(target_mean_melt$`Before or after controversial tweet`,
                                                                    levels = c('Before', 'After'))
   
-                                                 
-  print(names(target_df))
+  print('Created target_mean_melt')                                               
+  # print(names(target_df))
   
   ## dataframe for boxplot
   target_df <- target_df %>%
@@ -231,20 +277,22 @@ server <- function(input, output) {set.seed(122)
                                  id='Before_or_after_controversy')
   target_df_melt$Before_or_after_controversy<- factor(target_df_melt$Before_or_after_controversy, 
                                                       levels = c('Before', 'After'))
-  
+  print('Created target_df_melt')    
   target_df_melt <- target_df_melt %>% 
     dplyr::rename('Before or after controversial tweet' = Before_or_after_controversy)
   
   
   
-  time_target_df <- target_df
-  time_target_df$DT <- as.POSIXct(time_target_df$datetime)
-  time_target_df <- time_target_df %>%
-    select('DT', 'Display_name', 
-           'clean_tweet_text', 
-           'Number of likes', 
-           'Number of retweets', 
-           'Number of responses')
+  # time_target_df <- target_df
+  time_target_melt<- read.csv('../data/viz/tweet_stats_over_time.csv')
+  time_target_melt$datetime <- as.POSIXct(time_target_melt$datetime)
+  
+  # time_target_df <- time_target_df %>%
+  #   select('DT', 'display_name', 
+  #          'clean_tweet_text', 
+  #          'Number of likes', 
+  #          'Number of retweets', 
+  #          'Number of responses')
   
   # time_target_df <- time_target_df %>%
   #   rename( 'Number of likes' = 'Number_likes', 
@@ -252,16 +300,14 @@ server <- function(input, output) {set.seed(122)
   #           'Number of responses' = 'Number_responses')
 
     
-  time_target_melt<- reshape::melt(time_target_df, id.vars=c('DT', 'Display_name', 'clean_tweet_text'))
-  time_target_melt
+  # time_target_melt<- reshape::melt(time_target_df, id.vars=c('DT', 'Display_name', 'clean_tweet_text'))
   
-  
-  cutoff_date <- as.POSIXct('2022-10-03 16:15:43+0000')
+  # cutoff_date <- as.POSIXct('2022-10-03 16:15:43+0000')
   # wrapping teh text
-  time_target_melt$clean_tweet_text = lapply(time_target_melt$clean_tweet_text, function(x){stringr::str_wrap(x, 15)})
-  time_target_melt$clean_tweet_text = lapply(time_target_melt$clean_tweet_text, function(x){gsub('\n', '<br>', x)})
+  # time_target_melt$clean_tweet_text = lapply(time_target_melt$clean_tweet_text, function(x){stringr::str_wrap(x, 15)})
+  # time_target_melt$clean_tweet_text = lapply(time_target_melt$clean_tweet_text, function(x){gsub('\n', '<br>', x)})
   
-  time_target_melt$clean_tweet_text
+  # time_target_melt$clean_tweet_text
   
   
   ########################################################################
@@ -385,12 +431,13 @@ server <- function(input, output) {set.seed(122)
   
   output$TS_tweet_stats <- renderPlotly({
     plot_ly(
-      data = time_target_melt %>% dplyr::filter(grepl(input$search_term_tweets, clean_tweet_text, ignore.case=TRUE)) %>%
-        subset(variable==input$tweet_stats_variable),
-      x = ~DT, 
+      data = time_target_melt %>% dplyr::filter(grepl(input$search_term_tweets, tweet_text, ignore.case=TRUE)) %>%
+        subset(variable==input$tweet_stats_variable) %>%
+        subset(By_or_at_Musk==input$by_or_at_musk_select),
+      x = ~datetime, 
       y = ~value,
       color=~variable,
-      text=~clean_tweet_text,
+      text=~tweet_text,
       hovertemplate = paste('<br><b>Date</b>:%{x}',
                             # '<br><b>%{color}</b>: '
                             '<br>%{y}',
@@ -398,7 +445,7 @@ server <- function(input, output) {set.seed(122)
       type = 'scatter', mode='markers')  %>% 
       layout(yaxis=list(title=NA), 
              xaxis = list(title=NA), 
-             title = list(title=paste("How have the states for ", selected_account, "\'s tweets changed in this period?"), 
+             title = list(title=paste("How have the Twitter changed in this period for either Musk or people mentioning him?"), 
                         xanchor = "right") )
   })
   
