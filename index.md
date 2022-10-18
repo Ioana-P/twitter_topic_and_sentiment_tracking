@@ -29,16 +29,23 @@ url_video: ""
 # Visualizing and quantifying topics on Twitter
 
 
-### Using OSINT tools and Transformers to extract topics and sentiment
+## Using OSINT tools and Transformers to extract topics and sentiment
 Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk. I then used one of [HuggingFace's](https://huggingface.co/models) pre-trained sentiment classification models and [BERTopic](https://maartengr.github.io/BERTopic/index.html) to extract and visualize key themes.
 I have also developed an RShiny dashboard for this project to hone my interactive visualization skills. 
 
 ![Dashboard screenshot](fig/dash_screenshot.png)
 
-### Results and thoughts
-(Results are analysed and visualised at greater length inside the repo's index.Rmarkdown notebook. For cleaning, EDA and modelling code, please see the Jupyter notebooks in the repo, explained in the filing system below)
+## Note on usefulness
+BERTopic can accommodate ["online topic modelling"](https://maartengr.github.io/BERTopic/getting_started/online/online.html) (i.e. incrementally adjusts topics with new data), and the results in this project have shown the model to be qualitatively coherent (lacking a labelled dataset, I am unable to compute the exact accuracy of clustering/classification). It would not be difficult to expand this work to a more regular, (semi-)automated pipeline to *monitor social media content* around a particular hashtag/person/theme and to extract insight or detect sudden changes. Suppose you were a news organisation looking to gauge interest in a particular recent event. Although social media isn't representative of general discourse around any given topic, taking data from Twitter, passing it through BERTopic and then setting the pipeline to regularly update the data and topics, would give you the data to assess at least some of the discussion around a theme or event. 
 
-I have been able to extract clear and definite topics from the collected data, and the pattern of activity around key themes has been what I expected it to be. For example, Musk's opining on ending the war in Ukraine generated a larger amount of responses across the board than his other tweets. Through this project I've found that BERTopic has been extremely useful in extracting information from unstructured text data, and I plan on using it in future projects.
+## Results and thoughts
+(Results are analysed and visualized at greater length inside the repo's index.Rmarkdown notebook. For cleaning, EDA and modelling code, please see the Jupyter notebooks in the repo, explained in the filing system below)
+
+### Overall usage
+I have been able to extract clear and definite topics from the collected data, and the pattern of activity around key themes has been what I expected it to be. For example, Musk's opining on ending the war in Ukraine generated a larger amount of responses across the board than his other tweets. Through this project I've found that BERTopic has been extremely useful and capable of extracting information from unstructured text data, and I plan on using it in future projects. Moreover, the model was able to group topic clusters at a greater level of precision and accuracy than I had honestly expected. In the image below I show how some of the topics (the most interesting ones) have been grouped by the model and what the model tells us vs what we can infer. For an NLP project is arguably even more important than in most data science projects to combine contextual knowledge and data viz with the results: language is far more ambiguous and mysterious than numbers.
+Note that the tweets analysed are all from 1st August 2022 onwards. 
+
+### Clustering Topics
 
 ![Hierarchy of our topics of interest](fig/hierarchical_select_top.png)
 
@@ -65,14 +72,11 @@ and, a slight outlier in some sense:
 
 | "there will be a day when there are literally 69 boosters 🤓"
 
-I do enjoy points of childish levity in a dataset. 
+(I do enjoy points of childish levity in a dataset.) 
+
 *Anyway*, this is another great example of BERTopic's strengths as a model. 
 
-The next diagrams shows the topics and their constituent topics, collapsed onto a 2-D plane with UMAP. It's very encouraging to see that the tweets we know to be distinct clusters (1,36,35,10 and 19,53) are still visibly separate even in this representation.
 
-(If you wish to inspect this further there are two HTML files of this saved in the fig folder)
-
-(I have deliverately not highlighted all of the topics of interest here because the plot would be far too cluttered them.)
 
 ### Repo filing system:
 
