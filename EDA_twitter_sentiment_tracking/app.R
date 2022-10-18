@@ -14,7 +14,7 @@ ui <- dashboardPage(
   skin = 'blue',
   
   
-  dashboardHeader(title = "Visualizing Twitter sentiment over time", titleWidth = 350),
+  dashboardHeader(title = "Visualizing Twitter Topics", titleWidth = 350),
   
   ## Sidebar content
   dashboardSidebar(
@@ -117,24 +117,55 @@ ui <- dashboardPage(
       # Third tab content
       tabItem(tabName = "topics",
               h2("Topic Modelling"),
-              p('I used the open-source ', tags$a(href="https://github.com/digital-scrappy/network-analysis-hackathon", "BertTopic"), 'tool to mine the text data for emergent topics'),
+              p('I used the open-source ', tags$a(href="https://github.com/digital-scrappy/network-analysis-hackathon", "Blattodea"), ' tool to mine the text data for emergent topics'),
               # more paragraphs here detailing experimentation, params, etc..
-              p('The topics you see in the table and first plot were created automatically by BERTopic, except for a small amount of augmentation done manually by me after running the model. Originally there'),
+              p('The topics you see in the table and first plot were created automatically by ', tags$a(href='https://maartengr.github.io/BERTopic/index.html'), ' BERTopic, except for a small amount of augmentation done manually by me after running the model. Originally there'),
               p('were more topics in the plot you can see (the table on the right shows all the original ones). There were a few dense clusters of topics with very similar meanings that were almost entirely'),
-              p('overlapping on the plot - most notably topics 1, 10, 29 and 46, which are all related to Russia\'s invasion of Ukraine and its consequences). '),
-              p('I used a pre-trained transformer model to encode the tweets as embeddings, then these were passed to BertTopic to create clusters and identify topics.'),
+              p('overlapping on the plot - most notably topics 1, 10, 35 and 36, which are all related to Russia\'s invasion of Ukraine and its consequences). '),
+              p('I used a pre-trained sentence transformer model to encode the tweets as embeddings, then these were passed to BertTopic to create clusters and identify topics.'),
+              p('The first plot below is the simplest and it shows the topics themselves collapsed to a 2D plane. The sizes of the bubbles are proportional to the frequency of the topic in the dataset.'),
               br(),
               
               fluidRow(
                 box(
-                  htmlOutput('topics_dash', width=5),
+                  htmlOutput('topics_dash', width="100%"),
                   title='Topic Analysis',
-                  width=7
-                ),
+                  width=12
+                )
+                # box(
+                #   dataTableOutput('topics_table', width='100%'), width=5
+                # )
+              ),
+              
+              p("The figure below shows all the topics generated prior to any merging taking place. 
+                It may seem very cluttered and noisy so I strongly recommend double clicking on one of the topics
+                in the legend on the right side to de-select all topics, then filter by clicking on whichever 
+                topics you're most interested in. "),
+              p("The most interesting meta-clusters appear if you visualize 1, 10, 35, 36 and 13, 19, 53, as a start. However, 
+                a more systematic way of deciding which clusters to highlight is to use the dendrogram at the bottom of the page:"),
+              
+              fluidRow(
                 box(
-                  dataTableOutput('topics_table', width='100%'), width=5
+                  htmlOutput('hierarchical_topics', width='100%'),
+                  title='', width=12
+                  )
+              ),
+              
+              
+              p('This dendrogram shows all the topics and how BERTopic has connected them in terms of similarity. This was useful in 
+                helping me decide how to condense the topics and is also a fair representation of the how the model reduces topics when 
+                specified to. We can see many of the groups we saw in the diagram above, and, combining the two visualizations, and
+                inspecting individual tweets, we can form a more informed picture of our model\'s performance and of the data. 
+                For instance, the dendrogram groups topic 0 ("0_elon_tesla_he_to") to be worth clustering with the war-related topics. 
+                The scatter plot shows us, however, that this topic is highly dispered among the data, even in just a 2D representation.'), 
+              
+              fluidRow(
+                box(
+                  htmlOutput('raw_topic_dendrogram', width='100%'),
+                  title='', width=12
                 )
               ),
+              
           
                 p("@article{grootendorst2022bertopic"),
                 p("        title={BERTopic: Neural topic modeling with a class-based TF-IDF procedure},"),
@@ -169,17 +200,23 @@ server <- function(input, output) {set.seed(122)
   ### DATA ETL AND WRANGLING HERE #########################################
   
   topics_fpath <- 'viz_topics_22_10_14_redux.html'
+  hierarchical_dendrogram_path<-'hierarchical_topics_ALL_topics_2.html'
+  docs_and_topics_fpath<-'scatter_topics_ALL.html'
+  
+  
   get_html_viz<-function(fpath) {
     return(includeHTML(fpath))
   }
   
   output$topics_dash <- renderUI({get_html_viz(topics_fpath)})
   
+  output$hierarchical_topics <- renderUI({get_html_viz(docs_and_topics_fpath)})
   
+  output$raw_topic_dendrogram <- renderUI({get_html_viz(hierarchical_dendrogram_path)})
   
   topics_df<-read.csv('../data/preds/topic_model_table.csv')
-  topics_df <- topics_df[c("Topic","Count","Name")]
-  topics_df <- subset(topics_df, Topic!=-1)
+  topics_df <- topics_df[c("Count","Name")]
+  topics_df <- subset(topics_df)
   topics_df <- topics_df[order(-topics_df$Count),]
   
   output$topics_table<-renderDataTable({
@@ -198,7 +235,6 @@ server <- function(input, output) {set.seed(122)
   #getting user summary stats
   df <- read.csv('../data/raw/user_attributes.csv')
   df <- distinct(df) 
-  head(df, 2)
   #subset for only those users in the main dashboard data
   df <- subset(df, X %in% disp_df$display_name)
   
@@ -282,6 +318,15 @@ server <- function(input, output) {set.seed(122)
     dplyr::rename('Before or after controversial tweet' = Before_or_after_controversy)
   
   
+  # #
+  # library(xlsx)
+  # xlsx::write.xlsx(target_df_melt, '../data/viz/tweet_target_df_melt.xlsx')
+  # target_df_melt<- xlsx::read.xlsx('../data/viz/tweet_target_df_melt.xlsx', 1)
+
+  # 
+  # xlsx::write.xlsx(target_mean_melt, '../data/viz/tweet_target_mean_melt.xlsx')
+  # target_mean_melt<- xlsx::read.xlsx('../data/viz/tweet_target_mean_melt.xlsx', 1)
+
   
   # time_target_df <- target_df
   time_target_melt<- read.csv('../data/viz/tweet_stats_over_time.csv')
@@ -358,6 +403,8 @@ server <- function(input, output) {set.seed(122)
       config(modeBarButtons = list(list("toImage")), displaylogo = FALSE, toImageButtonOptions = list(filename = "plotOutput.png"))
   })
   
+  
+  
   output$before_and_after_mean_plot <- renderPlotly({
     
       ggplotly(
@@ -382,7 +429,7 @@ server <- function(input, output) {set.seed(122)
     
   }) 
   
-
+  
 
   # boxplot being generated
   output$before_and_after_boxplot<- renderPlot({
