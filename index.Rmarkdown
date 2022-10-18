@@ -1,0 +1,335 @@
+---
+title: Visualizing and quantifying public sentiment on Twitter
+author: Ioana Fiona Preoteasa
+date: '2022-10-10'
+slug: visualizing-and-quantifying-public-sentiment-on-twitter
+categories: []
+tags: ["NLProc", "Deep Learning", "Unsupervised learning"]
+subtitle: 'Using OSINT tools and Transformers to quantify how a Tweet might spark a change in attitudes'
+summary: 'Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk and Zelensky. I then used HuggingFace\'s pre-trained sentiment analysis tool to quantify tweet sentiment, plot it over time, and determine how the tone of the internet has changed around Musk since he posted a controversial tweet.'
+authors: ["Ioana Preoteasa"]
+lastmod: '2022-10-10T11:33:48+01:00'
+featured: yes
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+# TL;DR
+I have gathered over 10'000 Tweets by or mentioning Elon Musk, used [BERTopic](https://maartengr.github.io/BERTopic/index.html) and a pretrained [DistilBERT sentiment classifier](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english) to 
+1. Find topics within the tweets
+2. 
+
+# Intro
+
+Twitter is often seen as the court of public opinion. Occasionally it becomes a battleground. Few people are as exposed to the raw reaction of the Twitter-sphere as the person who has made recalcitrant bids to purhcase it - Mr Elon Musk (@elonmusk). He can be a driving force behind emerging public sentiment - or a target of reaction. Is it possible to quantifiably tell when a person on Twitter has fallen from grace? In other words, the central question of this project is:
+
+*Can we use machine learning to determine how public sentiment changes around a particular person and/or their associated topics?*
+
+We will be focusing in this post on how we can monitor, quantify and visualize Twitter topics and sentiment around Mr Musk. 
+
+
+
+
+# Context
+
+
+# Hypotheses
+
+With such an open field as this, it is easy to create exploratory questions, and much harder to write confirmatory questions in advance.
+
+#### Exploratory:
+* Can we detect any clear topics amongst the tweets posted and what limitations do our methods have?
+* Moreover, can we see how these topics change in prevalence over time? 
+* How does the general sentiment (positive / negative) of the tweets change over time?
+
+#### Confirmatory
+1. The average sentiment for tweets directly mentioning elonmusk decreases by a statistically significant amount (alpha = 0.95). (Null hypothesis: the average sentiment for tweets mentioning elonmusk does not change significantly.)
+2. There is a significant correlation between Musk's tweets on the war in Ukraine and the number of responses generated. 
+3. There is a significant correlation between Musk's tweets on SpaceX and the number of likes generated. 
+
+
+# Methodology
+
+
+# 
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(warning=FALSE, echo=FALSE)
+
+library(tidyverse)
+library(scales)
+library(plotly)
+```
+
+```{r check2}
+topics_df<-read.csv('data/preds/topic_model_table.csv')
+topics_df <- topics_df[c("Topic","Count","Name")]
+topics_df <- subset(topics_df, Topic!=-1)
+topics_df <- topics_df[order(-topics_df$Count),]
+
+topics_df
+```
+
+
+```{r check, include=FALSE}
+
+disp_df <- read.csv('data/clean/dashboard_data.csv')
+  
+#getting user summary stats
+df <- read.csv('data/raw/user_attributes.csv')
+df <- distinct(df) 
+head(df, 2)
+#subset for only those users in the main dashboard data
+df <- subset(df, X %in% disp_df$display_name)
+disp_df$display_name
+df
+```
+
+
+```{r etl, include=FALSE}
+
+
+df <- as.data.frame(read.csv('data/raw/user_attributes.csv'))
+
+top_n <- 20
+countfollow <- head(df[c('X', 'X.followers', 'verified')][order(df$X.followers, decreasing=TRUE),], top_n)
+countpost <- head(df[c('X', 'X.posts', 'verified')][order(df$X.posts, decreasing=TRUE),], top_n)
+
+disp_df <- read.csv('data/clean/clean_display_data.csv')
+disp_df<- disp_df %>%
+    dplyr::rename(
+      Display_name = display_name,
+      Number_likes= X.likes,
+      Number_retweets = X.retweets,
+      Number_responses = X.responses
+    )
+
+targets <- c("@elonmusk")
+target_df <- subset(disp_df, Display_name=='ElonMusk')
+  # now groupby and sum
+
+target_mean <- target_df %>% group_by(Before_or_after_controversy) %>%
+    summarise('Likes' = mean(Number_likes),
+              'Retweets' = mean(Number_retweets),
+              'Responses' = mean(Number_responses),
+              )
+target_mean <- as.data.frame(target_mean)
+
+target_mean <- target_mean %>% 
+  dplyr::rename('Before or after controversial tweet' = Before_or_after_controversy)
+
+target_mean_melt <- reshape::melt(target_mean, id = c('Before or after controversial tweet'))
+target_mean_melt
+
+target_mean_melt$`Before or after controversial tweet` <- factor(target_mean_melt$`Before or after controversial tweet`,
+                                                                    levels= c('Before', 'After'))
+```
+
+
+
+```{r nr_likes, echo=TRUE, fig.height=6, fig.width=8}
+
+plot_bar_feats <- ggplot(data=target_mean_melt)+
+      geom_bar(aes(x=variable, 
+                  y=value, 
+                  fill=`Before or after controversial tweet`),
+               stat='identity', position='dodge')+
+  labs(title='Before and after the poll', 
+       subtitle = 'How have the average stats for Elon\'s Tweets changed after his poll on the war?', 
+       x = 'Average value', 
+       y='')+
+  theme_minimal()+
+  theme(legend.title = element_blank())
+
+ggplotly(plot_bar_feats) %>% 
+  layout(legend = list(title = list(text='')))
+
+```
+
+```{r nr_likes_boxplot, echo=TRUE, fig.height=4, fig.width=5}
+
+## now swithc to a boxplot
+target_df_melt<- reshape::melt(target_df[c('Number_likes', 
+                                           'Number_retweets', 
+                                           'Number_responses', 
+                                           'Before_or_after_controversy') ], 
+                               id='Before_or_after_controversy')
+target_df_melt$Before_or_after_controversy<- factor(target_df_melt$Before_or_after_controversy, 
+                                                    levels = c('Before', 'After'))
+# target_df_melt
+
+plot_box_feats <- ggplot(
+  target_df_melt,
+  )+
+  geom_jitter(aes(y=value, 
+                 x=variable, 
+                 colour=Before_or_after_controversy
+                 # fill=Before_or_after_controversy
+                 ),
+             alpha=0.3, 
+             position =position_jitterdodge(
+                                            dodge.width=0.95,
+                                            jitter.width=0.5,
+                                            jitter.height=0
+               )
+            # position=position_jitter(w=0.1,h=0.1)
+             )+
+  geom_boxplot(
+    aes(
+      y= value,
+      x=variable,
+      fill= Before_or_after_controversy
+      ),
+    outlier.shape = NA,
+    outlier.alpha = 0.01,
+    outlier.colour = 'white',
+    outlier.fill='white',
+    position= position_dodge(width =0.9))+
+  
+  labs(title='Before and after the poll (excluding outliers)', 
+       subtitle = 'How have the average stats for Elon\'s Tweets changed after his poll on the war?', 
+       x = 'Average value', 
+       y='')+
+  # facet_wrap('~variable', nrow = 1)+
+  scale_y_continuous(limits = quantile(target_df_melt$value, c(0.1, 0.9)))+
+  theme_minimal() + theme(legend.title=element_blank())
+
+plot_box_feats
+
+# fig_px_box <- ggplotly(plot_box_feats) %>% layout(boxmode='group', 
+                                                  # legend = list(title = list(text='')))
+# fig_px_box
+
+```
+
+
+```{r TS_trend, echo=TRUE, fig.height=6, fig.width=8}
+
+
+time_target_df <- target_df
+time_target_df$DT <- as.POSIXct(time_target_df$datetime)
+time_target_df <- time_target_df %>%
+  select('DT', 'Display_name', 'clean_tweet_text', 'Number_likes', 'Number_retweets', 'Number_responses')
+time_target_df <- time_target_df %>%
+  rename( 'Number of likes' = 'Number_likes', 
+          'Number of retweets' = 'Number_retweets', 
+          'Number of responses' = 'Number_responses')
+time_target_melt<- reshape::melt(time_target_df, id.vars=c('DT', 'Display_name', 'clean_tweet_text'))
+
+
+cutoff_date <- as.POSIXct('2022-10-03 16:15:43+0000')
+cutoff_date
+
+target_df
+
+plot<- ggplot(time_target_melt, aes(x=DT, y=value, color=variable))+
+  geom_smooth(se=FALSE)+
+  geom_point(alpha=0.4, size=0.75)+
+  geom_vline(xintercept = cutoff_date, linetype="dashed", 
+             color = "black", size=0.75
+             )+
+  annotate('label', x=cutoff_date, y=400000,size = 3, label = 'Tweet suggesting elections\nin occuppied regions', 
+           )+
+  # geom_label(y = 30000, x = cutoff_date, hjust=1.5, label='Tweet suggesting elections')+
+  theme_minimal()+
+  labs(title = 'Popularity over time',
+       x='',
+       y='Trend values',
+    subtitle='How has the popularity of Musk\'s tweets changed\nbefore and after his poll?')+
+  theme(legend.title = element_blank())+
+  scale_y_continuous(labels = label_number(suffix = " k", scale = 1e-3)
+                     , trans='log10'
+                      )
+
+plot
+```
+
+
+
+```{r trend_px, echo=TRUE, fig.height=6, fig.width=8 }
+
+
+time_target_melt$clean_tweet_text = lapply(time_target_melt$clean_tweet_text, function(x){stringr::str_wrap(x, 15)})
+time_target_melt$clean_tweet_text = lapply(time_target_melt$clean_tweet_text, function(x){gsub('\n', '<br>', x)})
+
+contr_tweet<- as.data.frame(subset(time_target_melt, DT==cutoff_date))
+
+px_trend <- plot_ly() %>%
+  add_trace(
+  data=time_target_melt, 
+  x = ~DT, 
+  y = ~value,
+  color=~variable,
+  text=~clean_tweet_text,
+  hovertemplate = paste('<br><b>Date</b>:%{x}',
+                        '<br>%{y}',
+                        '<br><b>Text</b>:%{text}'
+                                  ),
+  type = 'scatter', mode='markers')
+
+px_trend
+```
+
+```{r tfidf_sum,  echo=TRUE, fig.height=3, fig.width=4}
+
+tfidf_sum <- read.csv('data/viz/tfidf_sum.csv')
+tfidf_sum <- tfidf_sum[order(-tfidf_sum$score),]
+tfidf_sum
+
+plot<- ggplot(data=head(tfidf_sum, 20))+
+  geom_col(aes(x=score, y=reorder(term, score)), stat='identity', fill='lightblue')+
+  theme_minimal()+
+  labs(title = str_wrap('Top terms by total TF-IDF score', 40), 
+       x='', y='')
+  
+ggsave('viz/tf_idf_top_terms.png', height=3, width=4)
+plot
+```
+
+```{r tfidf_elon,  echo=TRUE, fig.height=3, fig.width=4}
+
+tfidf_sum <- read.csv('data/viz/tfidf_elon.csv')
+
+tfidf_sum <- tfidf_sum[order(-tfidf_sum$value),]
+tfidf_sum
+
+plot<- ggplot(data=head(tfidf_sum, 20))+
+  geom_col(aes(x=value, y=reorder(variable, value)), stat='identity', fill='lightblue')+
+  theme_minimal()+
+  labs(title = str_wrap('Top terms by total TF-IDF score for @elonmusk\`s tweets', 40), 
+       x='', y='')
+  
+ggsave('viz/tf_idf_top_terms_em.png', height=3, width=4)
+plot
+```
+
+
+
+
+```{r tfidf_sum,  echo=TRUE, fig.height=3, fig.width=6}
+
+df <- read.csv('viz/tfidf_select_time.csv')
+df$datetime <- as.Date(df$datetime)
+
+df <- subset(df, df$datetime>= as.Date('2022-02-01'))
+
+plot<- ggplot(data=df)+
+  geom_smooth(aes(x=datetime, y=value, color=variable), se=FALSE)+
+  geom_point(aes(x=datetime, y=value, color=variable), alpha=0.5, size=0.75)+
+  theme_minimal()+
+  labs(title = str_wrap('Top terms by total TF-IDF score', 40), 
+       x='', y='')+
+  theme(
+    legend.title = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+    )+
+  
+  facet_wrap('~By_or_at_Musk', nrow=1, scales = 'free')+
+  scale_x_date(date_breaks = '2 weeks', date_labels = '%b')
+  
+ggsave('viz/TS_top_terms_tfidf.png', height=3, width=6)
+plot
+```
+
