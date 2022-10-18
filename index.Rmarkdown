@@ -1,66 +1,83 @@
 ---
-title: Visualizing and quantifying public sentiment on Twitter
+title: Visualizing and quantifying topics on Twitter
 author: Ioana Fiona Preoteasa
 date: '2022-10-10'
 slug: visualizing-and-quantifying-public-sentiment-on-twitter
 categories: []
 tags: ["NLProc", "Deep Learning", "Unsupervised learning"]
-subtitle: 'Using OSINT tools and Transformers to quantify how a Tweet might spark a change in attitudes'
-summary: 'Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk and Zelensky. I then used HuggingFace\'s pre-trained sentiment analysis tool to quantify tweet sentiment, plot it over time, and determine how the tone of the internet has changed around Musk since he posted a controversial tweet.'
+subtitle: 'Using OSINT tools and Transformers to extract topics and sentiment'
+summary: 'Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk. I then used HuggingFace\'s pre-trained sentiment analysis tool and BERTopic to extract and visualize key themes.'
 authors: ["Ioana Preoteasa"]
 lastmod: '2022-10-10T11:33:48+01:00'
 featured: yes
-image:
-  caption: ''
+image: 'fig/snapshot_add_docs.png'
+  caption: 'Snapshot of the documents collected and some of the topics as determined by BERTopic'
   focal_point: ''
   preview_only: no
 projects: []
 ---
-# TL;DR
-I have gathered over 10'000 Tweets by or mentioning Elon Musk, used [BERTopic](https://maartengr.github.io/BERTopic/index.html) and a pretrained [DistilBERT sentiment classifier](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english) to 
-1. Find topics within the tweets
-2. 
 
-# Intro
-
-Twitter is often seen as the court of public opinion. Occasionally it becomes a battleground. Few people are as exposed to the raw reaction of the Twitter-sphere as the person who has made recalcitrant bids to purhcase it - Mr Elon Musk (@elonmusk). He can be a driving force behind emerging public sentiment - or a target of reaction. Is it possible to quantifiably tell when a person on Twitter has fallen from grace? In other words, the central question of this project is:
-
-*Can we use machine learning to determine how public sentiment changes around a particular person and/or their associated topics?*
-
-We will be focusing in this post on how we can monitor, quantify and visualize Twitter topics and sentiment around Mr Musk. 
-
-
-
-
-# Context
-
-
-# Hypotheses
-
-With such an open field as this, it is easy to create exploratory questions, and much harder to write confirmatory questions in advance.
-
-#### Exploratory:
-* Can we detect any clear topics amongst the tweets posted and what limitations do our methods have?
-* Moreover, can we see how these topics change in prevalence over time? 
-* How does the general sentiment (positive / negative) of the tweets change over time?
-
-#### Confirmatory
-1. The average sentiment for tweets directly mentioning elonmusk decreases by a statistically significant amount (alpha = 0.95). (Null hypothesis: the average sentiment for tweets mentioning elonmusk does not change significantly.)
-2. There is a significant correlation between Musk's tweets on the war in Ukraine and the number of responses generated. 
-3. There is a significant correlation between Musk's tweets on SpaceX and the number of likes generated. 
-
-
-# Methodology
-
-
-# 
-```{r setup, include=FALSE, echo=FALSE}
-knitr::opts_chunk$set(warning=FALSE, echo=FALSE)
+```{r setup, include=FALSE, echo=TRUE}
+knitr::opts_chunk$set(warning=FALSE, echo=FALSE, fig.height=6, fig.width=8)
 
 library(tidyverse)
 library(scales)
 library(plotly)
-```
+library(ggplot2)
+``` 
+
+# TL;DR
+I have gathered over 10'000 Tweets by or mentioning Elon Musk, used [*BERTopic*](https://maartengr.github.io/BERTopic/index.html) and a pre-trained [*DistilBERT* sentiment classifier](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english) to 
+1. Find *topics* within the tweets;
+2. Explore the features of these topics in terms of likes, retweets and responses and 
+3. See how these features vary over time.
+
+For me, apart from looking at interesting and honing my skills, another benefit of this project has been utilizing newer tools such as [HuggingFace's BERT models](https://huggingface.co/models), *BERTopic's topic detector* and visualizer, and [snscrape](https://github.com/JustAnotherArchivist/snscrape).I've also taken the time to make a *dashboard* in RShiny, located in [this repo](https://github.com/Ioana-P/twitter_sentiment_tracking).
+
+![Snapshot of the documents collected and their algorithmically determined topics]('fig/snapshot_add_docs.png')
+
+# Intro
+
+Twitter is often seen as the court of public opinion. Occasionally it becomes a battleground. Few people are as exposed to the raw reaction of the Twitter-sphere as the person who has made recalcitrant bids to purchase it - Mr Elon Musk (@elonmusk). He can be a driving force behind emerging public sentiment - or a target of reaction. He also tweets about many different topics, which makes him an excellent choice for a central point around which to collect and explore data. 
+In other words, the central question of this project is:
+
+- Can we use *machine learning* (ML) to automatically determine what key themes a person (and the people tagging them) are talking about? Moreover can we determine how sentiment around the person and those themes varies over time? 
+
+We will be focusing in this post on how we can monitor, quantify and visualize Twitter topics and sentiment around Mr Musk and the things he chooses to talk about. The question above is quite dense so let's unpack it into some more tractable objectives:
+
+- Collect and clean data on a person's tweets (in this case @elonmusk) and other twitter users in their network. 
+- Use unsupervised ML methods to extract topics from those tweets. 
+- Use ML-models to infer the sentiment of those tweets. 
+
+This was quite an involved project for me and I imagine this will be the first post of many, as I intend to extend part of the exploration done here to other projects. I'll probably keep adding to this project repo for a while. 
+
+I would also like to replicate parts of this project in the future but searching for a Twitter hashtag rather than a handle.
+
+# Hypotheses
+
+With such an open field as this, it is easy to create an array of exploratory questions, and much harder to think of confirmatory hypotheses in advance. In brief, I expect that there will be some topics surrounding Starlink, the Russian invasion of Ukraine, SpaceX, and I expect that those tweets by Musk which are focused on those topics will generate a lot of likes and or responses. I also expect that Musk's tweets will have recently been the greatest focus of attention.
+
+#### Exploratory:
+* Can we detect any clear topics amongst the tweets posted and what limitations do our methods have? Are the detected topics what we expected?
+* Can we see how these topics change in prevalence over time? 
+* How does the general sentiment (positive / negative) of the tweets change over time? What can this tell us about this corner of the twitter-sphere at this time? 
+* 
+
+#### Confirmatory
+1. There is a significant correlation between Musk's tweets on the war in Ukraine and the number of responses generated. 
+2. There is a significant correlation between Musk's tweets on SpaceX and the number of likes generated. 
+
+
+# Methodology
+
+The data collection was done using the Blattodea tool, an interface for snscrape that my team worked on during a recent hackathon (link to come soon, once we've tidied up the repo). Blattodea was designed as a tool for collecting and visualizing Twitter networks. As such, it's primary focus is on collecting tweets via mentioned users and building a network fanning out from the initial mentioned user.
+In brief, the tool first selects _n_ (where _n_ is user-specified) tweets for one particular twitter handle, collecting them and their metadata. Then, for each of those tweets, the tool collects _n_ tweets for any user mentioned in any of those tweets. If the _recursion depth_ parameter is set to be higher than 1, then the tool goes another level and collects tweets for any users mentioned in the 2nd level of tweets. 
+One drawback of using this for collecting data is that the data relies on mentioning of users in order to collect that user's tweets. Therefore, wherever there is analysis of Elon Musk's audience on Twitter, I've avoided making any strong inferences, since this method does not capture a representative sample of what would be considered Musk's Twitter audience. Nevertheless, it is valid to make inferences about Musk's own tweets and how the emergent topics are representative of what he discusses on Twitter. 
+
+All the data cleaning and preprocessing steps are shown in the Jupyter Notebook called "4. data_cleaning", which relies on the modules within 'functions/'. Much of the original rough EDA can be seen within notebook '3. EDA'.
+
+
+# 
 
 ```{r check2}
 topics_df<-read.csv('data/preds/topic_model_table.csv')
@@ -68,11 +85,10 @@ topics_df <- topics_df[c("Topic","Count","Name")]
 topics_df <- subset(topics_df, Topic!=-1)
 topics_df <- topics_df[order(-topics_df$Count),]
 
-topics_df
 ```
 
 
-```{r check, include=FALSE}
+```{r check, echo=FALSE}
 
 disp_df <- read.csv('data/clean/dashboard_data.csv')
   
@@ -83,7 +99,7 @@ head(df, 2)
 #subset for only those users in the main dashboard data
 df <- subset(df, X %in% disp_df$display_name)
 disp_df$display_name
-df
+
 ```
 
 

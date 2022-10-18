@@ -1,47 +1,26 @@
-# project_template
-Template for future personal projects, including issues, README prompts and subfolders.
-# DELETE ABOVE
-
-# Project Title
-
-### Brief, 2 sentence description saying why this project is important, e.g.
-##### One of the best ways to solve X / find Y / retrieve Z is to use PCA / TF-IDF / RFs...
-
-##### In this project I've done ... 
-##### By the end I achieved ... / found ... / developed ... .
-_____________________________________________________________________________________________________________________________
-
-###  Significant findings/ Executive Summary
-
-(LINK to youtube video; and/or blog post)
-
-### The Data at a Glance (EDA)
-
-_____________________________________________________________________________________________________________________________
+# Visualizing and quantifying topics on Twitter
 
 
-### Model performance on validation and test data
+### Using OSINT tools and Transformers to extract topics and sentiment
+##### Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk. I then used HuggingFace\'s pre-trained sentiment analysis tool and BERTopic to extract and visualize key themes
+##### I have also developed an RShiny dashboard for this project to hone my interactive visualization skills. 
 
+![Snapshot of the documents collected and their algorithmically determined topics]('fig/snapshot_add_docs.png')
 
-_____________________________________________________________________________________________________________________________
-
-### Model interpretation
-
-
-_____________________________________________________________________________________________________________________________
-
-
-### Insights and possible actions
+![Dashboard screenshot](fig/dash_screenshot.png)
 
 ### Filing system:
 
 Notebooks
-1. Modelling_and_insights.ipynb - principal notebook of findings and final results; most relevant notebook to most people
-2. Model_building_and_optimization.ipynb - different models were all tried out here, tuned and optimized
-3. EDA.ipynb - exploration of the data; go here for further interesting visuals
-4. data_cleaning.ipynb - notebook detailing the entire cleaning process
+1. index.Rmarkdown - principal notebook of findings and final results; most relevant notebook to most people
+2a. Topic_modelling_with_BERT.ipynb - notebook details the journey of analysing the model results and extracting insights.
+2b. Modelling_w_BERTopic_GColab.ipynb - Google Colab notebook where the BERTopic and sentiment models' results were generated. 
+3. EDA.ipynb - rough exploration of the data; go here for more in-depth look at some of the data. Most of the visualizations therein were not used.
+4. data_cleaning.ipynb - notebook detailing the entire cleaning process. Primarily relies on py modules within functions.
 
 Folders
-* clean_data - folder containing clean data and any additional summary data generated
-* raw_data - data as it was when imported / downloaded / scraped into my repository
+* data - folder containing raw, processed, clean and feature data and any additional summary data generated. Also contains inferred data (i.e. tweets and their predicted sentiment; tweets and their associated topics)
+* models - the fitted BERTopic model files - **NOTE** unfortunately, due to a bug in the way the models were saved, it is not possible to load them up locally on a lot of machines. However, it is possible to reproduce their creation and fitting on Google Colab, using the [Colab notebook](https://github.com/Ioana-P/IoanaFio/blob/main/content/project/twitter_sentiment_tracking/Modelling_w_BERTopic_GColab.ipynb) inside this repo
+*fig - all data viz (including interactive HTML files)
+*functions
 * archive - any additional files and subfolders will be here
