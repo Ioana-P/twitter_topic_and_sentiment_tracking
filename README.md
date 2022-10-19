@@ -1,33 +1,6 @@
----
 date: "2022-10-18"
-external_link: ""
-image: 
-  caption: Snapshot of topics extracted from Tweets
-  focal_point: Smart
-links:
-- icon: github
-  icon_pack: fab
-  name: Check out
-  url: https://github.com/Ioana-P/twitter_sentiment_tracking
-# slides: example
-summary: Using OSINT tools and Transformers to extract topics and sentiment from Elon Musk's corner of the Twitter-sphere. 
-tags: 
-  - "Deep Learning"
-  - "NLProc"
-  - "Unsupervised-Learning"
-  - "Machine Learning"
-  
-# output:
-#   html_document:
-#     includes:
-#       before_body: fig/scatter_topics_SELECT.html
+# Tracking Topics and Sentiment on Twitter
 
-title: Visualizing and quantifying topics on Twitter
-url_code: ""
-url_pdf: ""
-url_slides: ""
-url_video: ""
----
 ## Using OSINT tools and Transformers to extract topics and sentiment
 Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk. I then used one of [HuggingFace's](https://huggingface.co/models) pre-trained sentiment classification models and [BERTopic](https://maartengr.github.io/BERTopic/index.html) to extract and visualize key themes.
 I have also developed an RShiny dashboard for this project to hone my interactive visualization skills. 
