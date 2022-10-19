@@ -28,9 +28,6 @@ url_pdf: ""
 url_slides: ""
 url_video: ""
 ---
-# Visualizing and quantifying topics on Twitter
-
-
 ## Using OSINT tools and Transformers to extract topics and sentiment
 Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk. I then used one of [HuggingFace's](https://huggingface.co/models) pre-trained sentiment classification models and [BERTopic](https://maartengr.github.io/BERTopic/index.html) to extract and visualize key themes.
 I have also developed an RShiny dashboard for this project to hone my interactive visualization skills. 
@@ -45,7 +42,7 @@ BERTopic can accommodate ["online topic modelling"](https://maartengr.github.io/
 
 ### Overall usage
 I have been able to extract clear and definite topics from the collected data, and the pattern of activity around key themes has been what I expected it to be. For example, Musk's opining on ending the war in Ukraine generated a larger amount of responses across the board than his other tweets. Through this project I've found that BERTopic has been extremely useful and capable of extracting information from unstructured text data, and I plan on using it in future projects. Moreover, the model was able to group topic clusters at a greater level of precision and accuracy than I had honestly expected. In the dendrogram included below I show how some of the topics (the most interesting ones) have been grouped by the model and what the model tells us vs what we can infer. For an NLP project is arguably even more important than in most data science projects to combine contextual knowledge and data viz with the results: language is far more ambiguous and mysterious than numbers.
-Note that the tweets analysed are all from 1st August 2022 onwards. 
+Note that the tweets analysed here are all from 1st August 2022 onwards. 
 
 ### Clustering Topics
 Given the time-range for our data, it should be no surprise that tweets about the war have formed their own distinct group of clusters. It's easy to see how topics 35, 36, 1 and 10 are linked. For interpreting this graph, recall that the most important number to count is the number of steps to take along the tree for two topics/leafs to connect.
@@ -78,17 +75,42 @@ and, a slight outlier in some sense:
 
 (I do enjoy points of childish levity in a dataset.) 
 
-*Anyway*, this is another great example of BERTopic's strengths as a model. 
+*Anyway*, this is another great example of BERTopic's strengths as a model.
 
 ### Twitter stats over time
 
+If we take a look at the by-day total likes, re-tweets and responses, it's clear that 3rd Oct 2022, when Musk posted his poll on the war, was a bit of watershed in terms of twitter stats (note that the ones in the plot are scaled down for comparison's sake- he didn't just get under 5 responses!). This particular day certainly generated the most conversation (if we take number of responses as a proxy) and in generally most of his tweet stats increased somewhat in the period after. Apart from the one-day spike, it can hardly be said that the furore many felt as a result of the 3rd Oct twitter poll has manifested at the tweet meta-data level.
 
 ![Stats for Musk's tweets over time](fig/ggplot_musk_all_total_tweets_feats.png)
 
-
+If we compare *average* values before and after the poll went out (shown below with the box and jitter plot- each point represents one tweet), then we see barely any changes at all. The distribution of retweets and responses seems to be somewhat more skewed, but looking at it it's not even worth doing a statistical test. 
 
 ![Stats for Musk's tweets before and after](EDA_twitter_sentiment_tracking/boxplot_before_and_after.png)
 
+How about when we combine tweet stats with the topics, just for Elon Musk's tweets? Well, the heatmap below shows that there isn't much correlation between the probability scores of each of our main topics of interest and any of the three tweet features:
+
+![Correlation heatmap of main topics and tweet stats](EDA_twitter_sentiment_tracking/corr_heatmap.png)
+
+There are two correlations worth testing for here:
+
+* nr of likes and tweets on SpaceX
+* nr of responses and tweets on Russia-Ukraine war
+
+Let's check them for statistical significance. 
+
+| H0: there is no statistically significant correlation between our determined* cluster of Elon Musk's tweets on the Russia-Ukraine war and the number of responses to his tweets. 
+
+| H1: there is a statistically significant correlation between our determined* Elon Musk's tweets on the Russia-Ukraine war and the number of responses to his tweets. 
+
+Setting alpha = 0.05/(number of tests) = 0.025
+
+| H0: there is no statistically significant correlation between our determined* cluster of Elon Musk's tweets on SpaceX and the number of likes to these tweets. 
+
+| H1: there is a statistically significant correlation between our determined* Elon Musk's tweets on SpaceX and the number of likes to these tweets. 
+
+Setting alpha = 0.05/(number of tests) = 0.025
+
+*I'm referring to them as determined by us because these tweets were categorised via a semi-supervised method, and they are not a gold-standard dataset that has been hand-labelled. 
 
 ### Sentiment and Topics
 
@@ -102,10 +124,17 @@ I've tried to represent the number of tweets in the opacity/transparency of the 
 Perhaps the opacity of the points should be a greater focus of attention: it would appear that attention flared up dramatically on Musk (for this segment of the data) and then died down again slowly, but maintained the tendency to be negative. 
 
 
+### Bottom-line
+
+* Musk's tweets on the war did generate a significant response on Twitter, although this appears to have been short-lived
+* These tweets form very clear clusters of topics and can be amalgamated with other, tangentially related topics. 
+* BERTopic is an awesome tool that I'm looking forward to using again!
+
+
 ### Repo filing system:
 
 Notebooks
-1. index.Rmarkdown - principal notebook of findings and final results; most relevant notebook to most people
+1. index.md - principal file of findings and final results; most relevant notebook to most people
 2a. Topic_modelling_with_BERT.ipynb - notebook details the journey of analysing the model results and extracting insights.
 2b. Modelling_w_BERTopic_GColab.ipynb - Google Colab notebook where the BERTopic and sentiment models' results were generated. 
 3. EDA.ipynb - rough exploration of the data; go here for more in-depth look at some of the data. Most of the visualizations therein were not used.
