@@ -79,7 +79,7 @@ All the data cleaning and preprocessing steps are shown in the Jupyter Notebook 
 
 ```{r topic_avg_total_stas, echo=TRUE}
 df<-read.csv('data/viz/topic_sent_agg_D_all_topics.csv')
-df
+# df
 df<- df[c('datetime', 'By_or_at_Musk', 'avg_likes', 'avg_retweets', 'avg_responses')]
 
 df$datetime <- as.Date(df$datetime)
@@ -97,7 +97,7 @@ df_filter$avg_retweets <- scale(df_filter$avg_retweets)
 df_filter$avg_responses <- scale(df_filter$avg_responses)
 
 df_melt<- reshape::melt( df_filter, id = c('datetime', 'By_or_at_Musk') )
-df_melt
+# df_melt
 # df_filter <- dplyr::filter(df_filter, count_sentiment>=2)
 # df_filter$count_sentiment_scaled <- scale(df_filter$count_sentiment)
 
@@ -126,7 +126,7 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
         )
   
   
-ggsave('fig/ggplot_musk_all_tweets_feats.png', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_musk_all_tweets_feats.jpeg', width= 7, height=5, dpi=400)
 plot
 
 # 
@@ -151,7 +151,7 @@ df_filter$total_retweets <- scale(df_filter$total_retweets)
 df_filter$total_responses <- scale(df_filter$total_responses)
 df_filter<- df_filter[c('datetime', 'total_likes', 'total_retweets', 'total_responses')]
 df_melt<- reshape::melt( df_filter, id = c('datetime') )
-df_melt
+# df_melt
 # df_filter <- dplyr::filter(df_filter, count_sentiment>=2)
 # df_filter$count_sentiment_scaled <- scale(df_filter$count_sentiment)
 
@@ -181,7 +181,7 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
         )
   
   
-ggsave('fig/ggplot_musk_all_total_tweets_feats.png', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_musk_all_total_tweets_feats.jpeg', width= 7, height=5, dpi=400)
 plot
 
 # 
@@ -191,7 +191,7 @@ plot
 
 ```{r topic_sent_agg_D, echo=TRUE}
 df<-read.csv('data/viz/topic_sent_agg_D.csv')
-df
+# df
 df<- df[c('datetime', 'Main_topic','By_or_at_Musk', 'Pred_sentiment_out', 'avg_likes', 'avg_retweets', 'avg_responses', 'count_sentiment', 'count_sentiment_pct')]
 
 df$datetime <- as.Date(df$datetime)
@@ -209,7 +209,7 @@ df_filter$avg_retweets <- scale(df_filter$avg_retweets)
 df_filter$avg_responses <- scale(df_filter$avg_responses)
 
 # df_melt<- reshape::melt( df_filter, id = c('datetime', 'Main_topic', 'By_or_at_Musk', 'Pred_sentiment_out') )
-df_filter <- dplyr::filter(df_filter, count_sentiment>=2)
+df_filter <- dplyr::filter(df_filter ) #, count_sentiment>=2)
 df_filter$count_sentiment_scaled <- scale(df_filter$count_sentiment)
 plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sentiment_out, 
                              alpha = count_sentiment_scaled))+
@@ -233,7 +233,7 @@ plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sent
         )
   
   
-ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment.png', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment.jpeg', width= 7, height=5, dpi=400)
 plot
 
    
@@ -256,7 +256,7 @@ hmap<- ggplot(data = melted_cormat, aes(x=X, y=variable, fill=value, label=value
     size = 12, hjust = 1))+
  coord_fixed()
 
-ggsave('EDA_twitter_sentiment_tracking/corr_heatmap.png',  width= 7, height=7, dpi=400)
+ggsave('EDA_twitter_sentiment_tracking/corr_heatmap.jpeg',  width= 5, height=5, dpi=400)
 hmap
 ```
 
@@ -266,7 +266,7 @@ hmap
 
 ```{r topic_sent_agg_4H, echo=TRUE}
 df<-read.csv('data/viz/topic_sent_agg_4H.csv')
-df
+# df
 df<- df[c('datetime', 'Main_topic','By_or_at_Musk', 'Pred_sentiment_out', 'avg_likes', 'avg_retweets', 'avg_responses', 'count_sentiment', 'count_sentiment_pct')]
 
 df$datetime <- as.Date(df$datetime)
@@ -308,14 +308,14 @@ plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sent
         )
   
   
-ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment_4H.png', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment_4H.jpeg', width= 7, height=5, dpi=400)
 plot
 
   
 ```
 
 
-```{r etl, include=FALSE}
+```{r etl, echo=FALSE}
 
 
 df <- as.data.frame(read.csv('data/raw/user_attributes.csv'))
@@ -332,11 +332,11 @@ disp_df<- disp_df %>%
       Number_retweets = X.retweets,
       Number_responses = X.responses
     )
-disp_df
+# disp_df
 targets <- c("@elonmusk")
 target_df <- subset(disp_df, By_or_at_Musk=='By @elonmusk')
   # now groupby and sum
-target_df
+# target_df
 target_mean <- target_df %>% group_by(Before_or_after_controversy) %>%
     summarise('Likes' = mean(Number_likes),
               'Retweets' = mean(Number_retweets),
@@ -348,7 +348,7 @@ target_mean <- target_mean %>%
   dplyr::rename('Before or after controversial tweet' = Before_or_after_controversy)
 
 target_mean_melt <- reshape::melt(target_mean, id = c('Before or after controversial tweet'))
-target_mean_melt
+# target_mean_melt
 
 target_mean_melt$`Before or after controversial tweet` <- factor(target_mean_melt$`Before or after controversial tweet`,
                                                                     levels= c('Before', 'After'))
@@ -419,7 +419,7 @@ plot<- ggplot(
            subtitle = 'How have the average stats for Elon\'s Tweets changed after\nhis poll on the war?',
            x = '',
            y='')+
-      scale_y_continuous(limits = quantile(target_df_melt$value, c(0.0, 0.9)))+
+      scale_y_continuous(limits = quantile(df$value, c(0.0, 0.9)))+
       theme_minimal()+
       coord_flip()+
       theme(legend.title=element_blank(),
@@ -428,7 +428,7 @@ plot<- ggplot(
             )
 
 plot
-ggsave('EDA_twitter_sentiment_tracking/boxplot_before_and_after.png', height=5, width=7, dpi=500)
+ggsave('EDA_twitter_sentiment_tracking/boxplot_before_and_after.jpeg', height=5, width=7, dpi=500)
 
 ```
 
