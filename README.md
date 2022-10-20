@@ -5,7 +5,7 @@ date: "2022-10-18"
 Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk. I then used one of [HuggingFace's](https://huggingface.co/models) pre-trained sentiment classification models and [BERTopic](https://maartengr.github.io/BERTopic/index.html) to extract and visualize key themes.
 I have also developed an RShiny dashboard for this project to hone my interactive visualization skills. 
 
-![Dashboard screenshot](fig/dash_screenshot.png)
+![Dashboard screenshot](fig/dash_screenshot.jpeg)
 
 ## Note on utility and future projects
 BERTopic can accommodate ["online topic modelling"](https://maartengr.github.io/BERTopic/getting_started/online/online.html) (i.e. incrementally adjusts topics with new data), and the results in this project have shown the model to be qualitatively coherent (lacking a labelled dataset, I am unable to compute the exact accuracy of clustering/classification). It would not be difficult to expand this work to a more regular, (semi-)automated pipeline to *monitor social media content* around a particular hashtag/person/theme and to extract insight or detect sudden changes. Suppose you were a news organisation looking to gauge interest in a particular recent event. Although social media isn't representative of general discourse around any given topic, taking data from Twitter, passing it through BERTopic and then setting the pipeline to regularly update the data and topics, would give you the data to assess at least some of the discussion around a theme or event. 
@@ -54,15 +54,15 @@ and, a slight outlier in some sense:
 
 If we take a look at the by-day total likes, re-tweets and responses, it's clear that 3rd Oct 2022, when Musk posted his poll on the war, was a bit of watershed in terms of twitter stats (note that the ones in the plot are scaled down for comparison's sake- he didn't just get under 5 responses!). This particular day certainly generated the most conversation (if we take number of responses as a proxy) and in generally most of his tweet stats increased somewhat in the period after. Apart from the one-day spike, it can hardly be said that the furore many felt as a result of the 3rd Oct twitter poll has manifested at the tweet meta-data level.
 
-![Stats for Musk's tweets over time](fig/ggplot_musk_all_total_tweets_feats.png)
+![Stats for Musk's tweets over time](fig/ggplot_musk_all_total_tweets_feats.jpeg)
 
 If we compare *average* values before and after the poll went out (shown below with the box and jitter plot- each point represents one tweet), then we see barely any changes at all. The distribution of retweets and responses seems to be somewhat more skewed, but looking at it it's not even worth doing a statistical test. 
 
-![Stats for Musk's tweets before and after](EDA_twitter_sentiment_tracking/boxplot_before_and_after.png)
+![Stats for Musk's tweets before and after](EDA_twitter_sentiment_tracking/boxplot_before_and_after.jpeg)
 
 How about when we combine tweet stats with the topics, just for Elon Musk's tweets? Well, the heatmap below shows that there isn't much correlation between the probability scores of each of our main topics of interest and any of the three tweet features:
 
-![Correlation heatmap of main topics and tweet stats](EDA_twitter_sentiment_tracking/corr_heatmap.png)
+![Correlation heatmap of main topics and tweet stats](EDA_twitter_sentiment_tracking/corr_heatmap.jpeg)
 
 There are two correlations worth testing for here:
 
@@ -89,7 +89,7 @@ Setting alpha = 0.05/(number of tests) = 0.025
 
 I was interested to see how different topics within this data in terms of the sentiment. To that end, I passed the tweets through a pre-trained sentiment classifier to infer whether they were positive or negative. Below I show how this varies over time for the Tweets directly mentioning Elon Musk:
 
-![Sentiment around Musk by topic](fig/ggplot_pct_tweets_by_topic_and_sentiment.png)
+![Sentiment around Musk by topic](fig/ggplot_pct_tweets_by_topic_and_sentiment.jpeg)
 
 It's important to note that the amount of tweets is hard to include in the graph and the y-axis reports on percentages by day. Prior to early autumn '22, the number of tweets mentioning Elon and concerned with the war was significantly lower. Note that although there is a trend line included, it wherever the green and red lines run tangentially to each other near 100% is to be ignored: those are days with very few datapoints and where the % sentiment per day flips between fully positive and fully negative easily. 
 I've tried to represent the number of tweets in the opacity/transparency of the points, however, that is skewed by the fact the outlier of negative tweets Musk received the around the time he released his poll. Nevertheless, at least within this limited subset of his audience, there appears to have been a clear rise in the proportion of negative tweets, especially around the theme of the war. However, this batch is not representative of course: partially for the reason stated earlier about how the data was collect but also because these topics do not cover the full range of sentiment around Musk. Consider the fact that there could easily have been someone tweeting "@elonmusk, please stay out of global affairs" and this would likely not have been categoriesed as part of the war-theme topic cluster. Therefore, we are very likely undercounting. Realistically, here are only looking at the subset of tweets that were in some way in Elon's extended network, that mentioned him and that mentioned terms directly relevant to the war, so that someone with no prior knowledge could have picked them up and said "yes, this Tweet has X opinion about Musk on this topic". Lastly, there is the possibility of tweets that mention Musk but without actually being focussed on him: e.g. someone making a negative statement about the war in general and @ Musk in it for different reasons. 
