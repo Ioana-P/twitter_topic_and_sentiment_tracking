@@ -126,7 +126,7 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
         )
   
   
-ggsave('fig/ggplot_musk_all_tweets_feats.jpeg', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_musk_all_tweets_feats.jpeg', width= 7, height=5, dpi=400, bg='white')
 plot
 
 # 
@@ -181,7 +181,7 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
         )
   
   
-ggsave('fig/ggplot_musk_all_total_tweets_feats.jpeg', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_musk_all_total_tweets_feats.jpeg', width= 7, height=5, dpi=400, bg='white')
 plot
 
 # 
@@ -189,7 +189,7 @@ plot
 ```
 
 
-```{r topic_sent_agg_D, echo=TRUE}
+```{r topic_sent_agg_D, echo=TRUE, fig.width= 7, fig.wheight=5}
 df<-read.csv('data/viz/topic_sent_agg_D.csv')
 # df
 df<- df[c('datetime', 'Main_topic','By_or_at_Musk', 'Pred_sentiment_out', 'avg_likes', 'avg_retweets', 'avg_responses', 'count_sentiment', 'count_sentiment_pct')]
@@ -218,8 +218,8 @@ plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sent
   geom_smooth(alpha=1, se=FALSE)+
   # geom_area()+
   theme_minimal()+
-  labs(title='What percentage of tweets mentioning Musk are positive/negative by a topic?', 
-       subtitle=str_wrap('By day, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the number of tweets represented by a particular data point', 100),
+  labs(title='Sentiment and Topic over time', 
+       subtitle=str_wrap('By day, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the number of tweets represented by a particular data point', 80),
        x='', y='% of tweets', color='Auto-detected\nsentiment'
        )+
   facet_wrap('~Main_topic', nrow=2, scales='free_y', labeller = function(variable,value){str_replace_all(value, '_', ' ')}) +
@@ -233,7 +233,7 @@ plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sent
         )
   
   
-ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment.jpeg', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment.jpeg', width= 7, height=7, dpi=400, bg='white')
 plot
 
    
@@ -252,11 +252,14 @@ hmap<- ggplot(data = melted_cormat, aes(x=X, y=variable, fill=value, label=value
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
    midpoint = 0, limit = c(-1,1), space = "Lab")+ 
   theme_minimal()+
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-    size = 12, hjust = 1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, 
+    size = 10, hjust = 1),
+    axis.text.y = element_text(size=10),
+    plot.title = element_text(size=14))+
+  labs(x='', y='', title='Correlation heatmap of topic probabilities and tweet data')+
  coord_fixed()
 
-ggsave('EDA_twitter_sentiment_tracking/corr_heatmap.jpeg',  width= 5, height=5, dpi=400)
+ggsave('EDA_twitter_sentiment_tracking/corr_heatmap.jpeg',  width= 9, height=9, dpi=400, bg='white')
 hmap
 ```
 
@@ -308,7 +311,7 @@ plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sent
         )
   
   
-ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment_4H.jpeg', width= 7, height=5, dpi=400)
+ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment_4H.jpeg', width= 7, height=5, dpi=400, bg='white')
 plot
 
   
@@ -428,7 +431,7 @@ plot<- ggplot(
             )
 
 plot
-ggsave('EDA_twitter_sentiment_tracking/boxplot_before_and_after.jpeg', height=5, width=7, dpi=500)
+ggsave('EDA_twitter_sentiment_tracking/boxplot_before_and_after.jpeg', height=5, width=7, dpi=500, bg='white')
 
 ```
 
