@@ -25,6 +25,69 @@ library(scales)
 library(plotly)
 library(ggplot2)
 library(reshape)
+
+
+iofio_theme <- function(
+                        primary_colour = '#001440',
+                        secondary_colour = NA,
+                        main_font = 'Calibri'
+                        ) {
+  
+  if(is.na(secondary_colour)){
+    secondary_colour = primary_colour
+  }
+    
+  my_theme <- theme(
+    # add border - linetype 0 makes it invisible
+    panel.border = element_rect(colour = "grey", fill = NA, linetype = 0),
+    # no need for a background, it decreases the amount of negative space
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    # modify gridlines to be present but to be easy to tune out if necessary
+    panel.grid.major = element_line(colour = "grey", linetype = 5, size = 0.1),
+    # same goes for minor gridlines
+    panel.grid.minor = element_line(colour = "grey", linetype = 5, size = 0.025),
+    # modify text, axis and colour 4) and 5)
+    axis.text = element_text(colour = secondary_colour, face = "italic", family = main_font),
+    axis.title = element_text(colour = secondary_colour, family = main_font),
+    axis.ticks = element_line(colour = "grey"),
+    # customizing the legend
+    #default legend position at the bottom
+    legend.position = "bottom",
+    # don't want a background that's any different from the rest of the plot
+    legend.background=element_blank(), legend.key=element_blank(),
+    plot.caption = element_text(size=8, hjust = 1, face= "bold"),
+    plot.title.position = "plot",
+    plot.title = element_text(size=12, colour = primary_colour, family = main_font, face='bold'),
+    plot.subtitle = element_text(colour=primary_colour, size=8 , hjust = 0, face= "italic"),
+    # plot.subtitle.position = "plot",
+    plot.caption.position =  "plot"
+  )
+  return(my_theme)
+}
+  
+# another function for the defining of the colour palette
+# the args in seq_or_div lead to two preset (sequential or divergent)
+# colour-blindness-friendly palettes that I have looked up before
+# but also allowing for inputting a vector/list of colours
+make_palette <- function(
+                        num_colours=3, 
+                        colours=c('#648FFF','#785EF0', '#DC267F','#FE6100','#FFB000'), 
+                        seq_or_div = NA){
+  
+  if (!is.na(seq_or_div)) {
+    if(seq_or_div =='div'){
+      colour_palette <- colorRampPalette(colors = c('#648FFF','#785EF0', '#DC267F','#FE6100','#FFB000'))(num_colours)
+    } else if (seq_or_div =='seq'){
+      colour_palette <- colorRampPalette(colors = c('#66c2a5','#fc8d62','#8da0cb'))(num_colours)
+    } 
+  }
+  else {
+    colour_palette <- colorRampPalette(colors = colours)(num_colours)
+  }
+  
+  return(colour_palette)
+}
 ``` 
 
 # TL;DR
@@ -107,7 +170,7 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
   # geom_line(alpha=0.8, size=0.7, linetype='dashed')+
   geom_smooth(alpha=1, se=FALSE)+
   # geom_area()+
-  theme_minimal()+
+  iofio_theme()+
   labs(title='How have Elon Musk\'s tweets fared recently?', 
        # subtitle=str_wrap('By day, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the number of tweets represented by a particular data point', 100),
        x='', y='', color='Tweet feature'
@@ -123,7 +186,8 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
   scale_alpha(guide = 'none')+
   theme(strip.text.x = element_text(size = 10, face='bold'), plot.title = element_text(size=14, face='bold'),
         plot.subtitle = element_text(size=12)
-        )
+        )+
+  scale_colour_manual(values = make_palette(seq_or_div = 'div'))
   
   
 ggsave('fig/ggplot_musk_all_tweets_feats.jpeg', width= 7, height=5, dpi=400, bg='white')
@@ -161,7 +225,8 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
   # geom_line(alpha=0.8, size=0.7, linetype='dashed')+
   geom_smooth(alpha=1, se=FALSE)+
   # geom_area()+
-  theme_minimal()+
+  # theme_minimal()+
+  iofio_theme()+
   labs(title='How have Elon Musk\'s tweets fared recently?',
        subtitle='Daily aggregate Tweet stats - note these are scaled be more easily comparable', 
        # subtitle=str_wrap('By day, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the number of tweets represented by a particular data point', 100),
@@ -178,7 +243,8 @@ plot<- ggplot(df_melt, aes(x=datetime, y=value, colour=variable,
   scale_alpha(guide = 'none')+
   theme(strip.text.x = element_text(size = 10, face='bold'), plot.title = element_text(size=14, face='bold'),
         plot.subtitle = element_text(size=12)
-        )
+        )+
+  scale_colour_manual(values = make_palette(seq_or_div = 'div'))
   
   
 ggsave('fig/ggplot_musk_all_total_tweets_feats.jpeg', width= 7, height=5, dpi=400, bg='white')
@@ -189,7 +255,7 @@ plot
 ```
 
 
-```{r topic_sent_agg_D, echo=TRUE, fig.width= 7, fig.wheight=5}
+```{r topic_sent_agg_D, echo=TRUE, fig.width= 7, fig.height=5}
 df<-read.csv('data/viz/topic_sent_agg_D.csv')
 # df
 df<- df[c('datetime', 'Main_topic','By_or_at_Musk', 'Pred_sentiment_out', 'avg_likes', 'avg_retweets', 'avg_responses', 'count_sentiment', 'count_sentiment_pct')]
@@ -217,20 +283,21 @@ plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sent
   # geom_line(alpha=0.8, size=0.7, linetype='dashed')+
   geom_smooth(alpha=1, se=FALSE)+
   # geom_area()+
-  theme_minimal()+
+  iofio_theme()+
   labs(title='Sentiment and Topic over time', 
-       subtitle=str_wrap('By day, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the number of tweets represented by a particular data point', 80),
+       subtitle=str_wrap('By day, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the number of tweets represented by a particular data point', 70),
        x='', y='% of tweets', color='Auto-detected\nsentiment'
        )+
-  facet_wrap('~Main_topic', nrow=2, scales='free_y', labeller = function(variable,value){str_replace_all(value, '_', ' ')}) +
+  facet_wrap('~Main_topic', nrow=2, scales='fixed', labeller = function(variable,value){str_replace_all(value, '_', ' ')}) +
   geom_vline(xintercept= as.Date('2022-10-03 16:15:43+00:00'), y=100, linetype='dashed', alpha=0.7, 
              )+
-  geom_label(label='Musk\'s poll on\nending the war',  x= as.Date('2022-10-03 16:15:43+00:00'), y=120, color='black')+
+  geom_label(label='Musk\'s poll on\nending the war',  x= as.Date('2022-10-03 16:15:43+00:00'), y=120, color='black', size=2)+
   scale_y_continuous(limits=c(0,140), breaks = c(0,20,40,60,80,100))+ 
   scale_alpha(guide = 'none')+
   theme(strip.text.x = element_text(size = 10, face='bold'), plot.title = element_text(size=14, face='bold'),
         plot.subtitle = element_text(size=12)
-        )
+        )+
+  scale_colour_manual(values = make_palette(2, c('red', 'blue')))
   
   
 ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment.jpeg', width= 7, height=7, dpi=400, bg='white')
@@ -243,21 +310,27 @@ plot
 ```{r hmap}
 
 df <- read.csv('data/viz/elon_selection_for_corr.csv')
-melted_cormat <- melt(df)
-melted_cormat$variable <- gsub('X.', '#', melted_cormat$variable)
+df <- df[, names(df) != "tweet_id"]
 
-hmap<- ggplot(data = melted_cormat, aes(x=X, y=variable, fill=value, label=value)) + 
+melted_cormat <- round(cor(df), 2)
+melted_cormat <- melt(melted_cormat)
+melted_cormat$X1 <- gsub('X.', '#', melted_cormat$X1)
+melted_cormat$X2 <- gsub('X.', '#', melted_cormat$X2)
+
+hmap<- ggplot(data = melted_cormat, 
+              aes(x=X1, y=X2, fill=value, label=value)) + 
   geom_tile(color = "white")+
   geom_text(aes(label = round(value, 2)), color = "black", size = 4) +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+  scale_fill_gradient2(low = "#FFB000", high = "#DC267F",  mid = "white", 
    midpoint = 0, limit = c(-1,1), space = "Lab")+ 
-  theme_minimal()+
+  iofio_theme()+
   theme(axis.text.x = element_text(angle = 90, vjust = 1, 
     size = 10, hjust = 1),
     axis.text.y = element_text(size=10),
     plot.title = element_text(size=14))+
   labs(x='', y='', title='Correlation heatmap of topic probabilities and tweet data')+
  coord_fixed()
+# scale_fill_manual(values = make_palette(2, c('red', 'blue')))
 
 ggsave('EDA_twitter_sentiment_tracking/corr_heatmap.jpeg',  width= 9, height=9, dpi=400, bg='white')
 hmap
@@ -267,10 +340,10 @@ hmap
 
 
 
-```{r topic_sent_agg_4H, echo=TRUE}
-df<-read.csv('data/viz/topic_sent_agg_4H.csv')
-# df
-df<- df[c('datetime', 'Main_topic','By_or_at_Musk', 'Pred_sentiment_out', 'avg_likes', 'avg_retweets', 'avg_responses', 'count_sentiment', 'count_sentiment_pct')]
+```{r topic_sent_agg_D, echo=TRUE}
+df<-read.csv('data/viz/topic_sent_agg_D.csv')
+# names(df)
+df<- df[c('datetime', 'Main_topic','By_or_at_Musk', 'Pred_sentiment_out', 'avg_likes', 'avg_retweets', 'avg_responses', 'count_sentiment', 'count_sentiment_pct', 'avg_sentiment_score')]
 
 df$datetime <- as.Date(df$datetime)
 #how popular are Musk's tweets:
@@ -288,33 +361,49 @@ df_filter$avg_responses <- scale(df_filter$avg_responses)
 
 # df_melt<- reshape::melt( df_filter, id = c('datetime', 'Main_topic', 'By_or_at_Musk', 'Pred_sentiment_out') )
 df_filter$count_sentiment_scaled <- scale(df_filter$count_sentiment)
+# df_filter$count_sentiment_scaled <- sqrt(df_filter$count_sentiment_scaled)
+df_filter$`Nr of tweets` <- df_filter$count_sentiment
 
-plot<- ggplot(df_filter, aes(x=datetime, y=count_sentiment_pct, colour=Pred_sentiment_out, 
-                             alpha = count_sentiment_scaled))+
-  geom_point(size=1.5)+
+df_filter$Main_topic <- as.factor(df_filter$Main_topic)
+
+df_filter$label_to_add <- ifelse(df_filter$Main_topic=='Russia_Ukraine_and_war', 'Musk\'s poll on\nending the war', NA)
+
+
+plot<- ggplot(df_filter)+
+  # geom_point(mapping= aes(size = `Nr of tweets` ), 
+  #            # legend = count_sentiment
+  #            ) +
+  geom_point(aes(x=datetime, y=count_sentiment_pct, 
+                             colour=Pred_sentiment_out,
+                            size = `Nr of tweets`,
+                             # fill = Pred_sentiment_out,
+                             alpha = avg_sentiment_score^10), 
+           )+
   # geom_line(alpha=0.8, size=0.7, linetype='dashed')+
-  geom_smooth(se=FALSE)+
+  # geom_smooth(se=FALSE)+
   # geom_area()+
-  theme_minimal()+
+  iofio_theme()+
   labs(title='What percentage of tweets mentioning Musk are positive/negative by a topic?', 
-       subtitle=str_wrap('By 4H intervals, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the number of tweets represented by a particular data point', 100),
+       subtitle=str_wrap('By day intervals, what % of tweets with @elonmusk in them are positive or negative. Opacity is proportional to the average certainty of the sentiment classifier that the tweets were positive/negative (e.g. a very transparent point means the model was less certain of the sentiment it predicted). ', 90),
        x='', y='% of tweets', color='Auto-detected\nsentiment'
        )+
   facet_wrap('~Main_topic', nrow=2, scales='free_y', labeller = function(variable,value){str_replace_all(value, '_', ' ')}) +
   geom_vline(xintercept= as.Date('2022-10-03 16:15:43+00:00'), y=100, linetype='dashed', alpha=0.7, 
              )+
-  geom_label(label='Musk\'s poll on\nending the war',  x= as.Date('2022-10-03 16:15:43+00:00'), y=120, color='black')+
   scale_y_continuous(limits=c(0,140), breaks = c(0,20,40,60,80,100))+ 
   scale_alpha(guide = 'none')+
   theme(strip.text.x = element_text(size = 10, face='bold'), plot.title = element_text(size=14, face='bold'),
         plot.subtitle = element_text(size=12)
-        )
+        )+
+  scale_colour_manual(values = make_palette(2, c('red', 'blue')))+
+  geom_label(aes(x= as.Date('2022-10-03 16:15:43+00:00'), y=125 ,label=label_to_add),   color='black')+
+  scale_x_date(date_labels = '%d\n%b')
   
   
-ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment_4H.jpeg', width= 7, height=5, dpi=400, bg='white')
+ggsave('fig/ggplot_pct_tweets_by_topic_and_sentiment_D_scaled_single_annot.jpeg', width= 8, height=7, dpi=400, bg='white')
+
 plot
 
-  
 ```
 
 
@@ -370,7 +459,7 @@ plot_bar_feats <- ggplot(data=target_mean_melt)+
        subtitle = 'How have the average stats for Elon\'s Tweets changed after his poll on the war?', 
        x = 'Average value', 
        y='')+
-  theme_minimal()+
+  iofio_theme()+
   theme(legend.title = element_blank())
 
 ggplotly(plot_bar_feats) %>% 
@@ -378,7 +467,7 @@ ggplotly(plot_bar_feats) %>%
 
 ```
 
-```{r}
+```{r boxplot_before_and_after, include=FALSE}
 # df<- read.csv('data/viz/tweet_target_df_melt.csv')
 # df <- df %>% 
 #     dplyr::rename('Before or after controversial tweet' = Before.or.after.controversial.tweet)
@@ -392,6 +481,7 @@ df <- target_df %>%
 df <- melt(df, id.vars = c('datetime', 'Before_or_after_controversy'))
 
 df$variable <- gsub('_', ' of ', df$variable)
+write.csv(df, 'EDA_twitter_sentiment_tracking/boxplot_before_and_after_data.csv')
 
 plot<- ggplot(
       data=df
@@ -423,39 +513,63 @@ plot<- ggplot(
            x = '',
            y='')+
       scale_y_continuous(limits = quantile(df$value, c(0.0, 0.9)))+
-      theme_minimal()+
+      iofio_theme()+
       coord_flip()+
       theme(legend.title=element_blank(),
             text = element_text(size=12, face='bold')
             # axis.text.x=element_text(angle=45, vjust=1.5, hjust=1)
-            )
+            ) +  scale_colour_manual(values= make_palette(2)) + 
+  scale_fill_manual(values= make_palette(2))
 
-plot
+
 ggsave('EDA_twitter_sentiment_tracking/boxplot_before_and_after.jpeg', height=5, width=7, dpi=500, bg='white')
-
+plot
 ```
 
-```{r nr_likes_boxplot, echo=TRUE, fig.height=4, fig.width=5}
+```{r boxplot_by_categories, echo=TRUE, fig.height=4, fig.width=5}
+cutoff_date = as.Date('2022-10-03 16:15:43+00:00')
+df <- read.csv('data/viz/topics_categorised.csv')
+df$datetime<- as.Date(df$datetime)
+df$clean_tweet_text <- sapply(df$clean_tweet_text, function(x){stringr::str_wrap(x, 50)})
+df
+df_melt <- melt(df, id.vars = c("tweet_id" , "Main_topic","clean_tweet_text" ,"datetime" , "By_or_at_Musk"))
+df_melt$variable <- gsub('X.', '#' , df_melt$variable)
+df_melt$Main_topic <- gsub('_', ' ' , df_melt$Main_topic)
 
-## now swithc to a boxplot
-target_df_melt<- reshape::melt(target_df[c('Number_likes', 
-                                           'Number_retweets', 
-                                           'Number_responses', 
-                                           'Before_or_after_controversy') ], 
-                               id='Before_or_after_controversy')
-target_df_melt$Before_or_after_controversy<- factor(target_df_melt$Before_or_after_controversy, 
-                                                    levels = c('Before', 'After'))
-# target_df_melt
+df_melt$Before_or_after_controversy <- as.factor(ifelse(df_melt$datetime < cutoff_date, 'Before',
+                            'After'))
+df_melt_select_musk <- df_melt %>%
+  dplyr::filter(By_or_at_Musk=='By @elonmusk') %>%
+  dplyr::filter(Main_topic %in% c("Russia Ukraine and war", "Starlink and satellites"))
+
+df_melt_select_at_musk <- df_melt %>%
+  dplyr::filter(By_or_at_Musk!='By @elonmusk') %>%
+  dplyr::filter(Main_topic %in% c("Russia Ukraine and war", "Starlink and satellites"))
+
 
 plot_box_feats <- ggplot(
-  target_df_melt,
+  data = df_melt_select_musk,
   )+
-  geom_jitter(aes(y=value, 
-                 x=variable, 
-                 colour=Before_or_after_controversy
+  geom_boxplot(
+    aes(
+      x= value,
+      y=variable,
+      fill= Before_or_after_controversy
+      ),
+    alpha = 0.5,
+    outlier.shape = NA,
+    outlier.alpha = 0.01,
+    outlier.colour = 'white',
+    outlier.fill='white',
+    position= position_dodge(width =0.9))+
+    
+  geom_jitter(aes(x=value,
+                 y=variable,
+                 colour=Before_or_after_controversy,
+                  label = clean_tweet_text
                  # fill=Before_or_after_controversy
                  ),
-             alpha=0.3, 
+             alpha=0.75,
              position =position_jitterdodge(
                                             dodge.width=0.95,
                                             jitter.width=0.5,
@@ -463,36 +577,108 @@ plot_box_feats <- ggplot(
                )
             # position=position_jitter(w=0.1,h=0.1)
              )+
-  geom_boxplot(
-    aes(
-      y= value,
-      x=variable,
-      fill= Before_or_after_controversy
-      ),
-    outlier.shape = NA,
-    outlier.alpha = 0.01,
-    outlier.colour = 'white',
-    outlier.fill='white',
-    position= position_dodge(width =0.9))+
-  
-  labs(title='Before and after the poll (excluding outliers)', 
+  labs(title='Before and after the poll', 
        subtitle = 'How have the average stats for Elon\'s Tweets changed after his poll on the war?', 
-       x = 'Average value', 
+       x = '', 
        y='')+
-  # facet_wrap('~variable', nrow = 1)+
-  scale_y_continuous(limits = quantile(target_df_melt$value, c(0.1, 0.9)))+
-  theme_minimal() + theme(legend.title=element_blank())
+  
+  facet_wrap('~Main_topic', nrow = 3, scales='free' ) + #, labeller = function(var, x){stringr::str_replace_all(var, '_', ' ')})+
+  scale_x_continuous(limits = quantile(df_melt_select_at_musk$value, c(0.0, 1)))+
+  iofio_theme() + theme(legend.title=element_blank()) +
+  geom_hline(yintercept = c(1.5, 2.5), color="gray", size=.5, alpha=.8)+
+  scale_colour_manual(values= make_palette(2)) + 
+  scale_fill_manual(values= make_palette(2))
 
-plot_box_feats
+ggsave('EDA_twitter_sentiment_tracking/boxplot_before_and_after_by_topic.jpeg', height=5, width=7, dpi=500, bg='white')
 
-# fig_px_box <- ggplotly(plot_box_feats) %>% layout(boxmode='group', 
-                                                  # legend = list(title = list(text='')))
-# fig_px_box
+write.csv(df_melt_select_musk, 'EDA_twitter_sentiment_tracking/boxplot_before_and_after_by_topic.csv')
 
+
+fig_px_box <- ggplotly(plot_box_feats) %>% layout(boxmode='group',
+                      legend = list(title = list(text='')), 
+                      title = list(text =paste0(
+                        'Before and after the poll',
+                        ' - ',
+                        'How have the average stats for Elon\'s Tweets changed by theme?<br>'
+                      ), 
+                      margin=margin(0,0,50,0)
+                      )
+                      )
+fig_px_box
 ```
 
 
-```{r TS_trend, echo=TRUE, fig.height=6, fig.width=8}
+```{r boxplot_by_categories_at_musk, echo=TRUE, fig.height=4, fig.width=5}
+
+df_melt_select_at_musk <- df_melt %>%
+  dplyr::filter(By_or_at_Musk!='By @elonmusk') %>%
+  dplyr::filter(Main_topic %in% c("Russia Ukraine and war", "Starlink and satellites"))
+
+
+plot_box_feats <- ggplot(
+  data = df_melt_select_at_musk,
+  )+
+  # geom_boxplot(
+  #   aes(
+  #     x= value,
+  #     y=variable,
+  #     fill= Before_or_after_controversy
+  #     ),
+  #   alpha = 0.5,
+  #   outlier.shape = NA,
+  #   outlier.alpha = 0.01,
+  #   outlier.colour = 'white',
+  #   outlier.fill='white',
+  #   position= position_dodge(width =0.9))+
+    
+  geom_jitter(aes(x=value,
+                 y=variable,
+                 colour=Before_or_after_controversy,
+                  label = clean_tweet_text
+                 # fill=Before_or_after_controversy
+                 ),
+             alpha=0.75,
+             position =position_jitterdodge(
+                                            dodge.width=0.95,
+                                            jitter.width=0.5,
+                                            jitter.height=0
+               )
+            # position=position_jitter(w=0.1,h=0.1)
+             )+
+  labs(title='Before and after the poll', 
+       subtitle = 'How have the average stats for Tweets mentioning Elon changed?', 
+       x = '', 
+       y='')+
+  
+  facet_wrap('~Main_topic', nrow = 3, scales='free' ) + #, labeller = function(var, x){stringr::str_replace_all(var, '_', ' ')})+
+  scale_x_continuous(limits = quantile(df_melt_select_at_musk$value, c(0.0, 1)))+
+  iofio_theme() + theme(legend.title=element_blank()) +
+  geom_hline(yintercept = c(1.5, 2.5), color="gray", size=.5, alpha=.8)+
+  scale_colour_manual(values= make_palette(2)) + 
+  scale_fill_manual(values= make_palette(2))
+
+ggsave('EDA_twitter_sentiment_tracking/boxplot_before_and_after_by_topic_AT_musk.jpeg', height=5, width=7, dpi=500, bg='white')
+
+
+write.csv(df_melt_select_at_musk, 'EDA_twitter_sentiment_tracking/boxplot_before_and_after_by_topic_AT_musk.csv')
+
+
+fig_px_box <- ggplotly(plot_box_feats) %>% layout(
+                      # boxmode='group',
+                      legend = list(title = list(text='')), 
+                      title = list(text =paste0(
+                        'Before and after the poll',
+                        ' - ',
+                        'How have the average stats for Tweets mentioning Elon changed? <br>'
+                      ), 
+                      margin=margin(0,0,50,0)
+                      )
+                      )
+fig_px_box
+```
+
+
+```{r TS_trend, echo=FALSE, fig.height=6, fig.width=8}
 
 
 time_target_df <- target_df
@@ -520,7 +706,7 @@ plot<- ggplot(time_target_melt, aes(x=DT, y=value, color=variable))+
   annotate('label', x=cutoff_date, y=400000,size = 3, label = 'Tweet suggesting elections\nin occuppied regions', 
            )+
   # geom_label(y = 30000, x = cutoff_date, hjust=1.5, label='Tweet suggesting elections')+
-  theme_minimal()+
+  iofio_theme()+
   labs(title = 'Popularity over time',
        x='',
        y='Trend values',
@@ -567,7 +753,7 @@ tfidf_sum
 
 plot<- ggplot(data=head(tfidf_sum, 20))+
   geom_col(aes(x=score, y=reorder(term, score)), stat='identity', fill='lightblue')+
-  theme_minimal()+
+  iofio_theme()+
   labs(title = str_wrap('Top terms by total TF-IDF score', 40), 
        x='', y='')
   
@@ -584,7 +770,7 @@ tfidf_sum
 
 plot<- ggplot(data=head(tfidf_sum, 20))+
   geom_col(aes(x=value, y=reorder(variable, value)), stat='identity', fill='lightblue')+
-  theme_minimal()+
+  iofio_theme()+
   labs(title = str_wrap('Top terms by total TF-IDF score for @elonmusk\`s tweets', 40), 
        x='', y='')
   
@@ -605,7 +791,7 @@ df <- subset(df, df$datetime>= as.Date('2022-02-01'))
 plot<- ggplot(data=df)+
   geom_smooth(aes(x=datetime, y=value, color=variable), se=FALSE)+
   geom_point(aes(x=datetime, y=value, color=variable), alpha=0.5, size=0.75)+
-  theme_minimal()+
+  iofio_theme()+
   labs(title = str_wrap('Top terms by total TF-IDF score', 40), 
        x='', y='')+
   theme(
