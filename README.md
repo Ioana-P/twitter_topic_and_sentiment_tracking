@@ -5,7 +5,7 @@ date: "2022-10-18"
 Using the Blattodea tool that I helped develop during a hackathon, I retrieved the most recent tweets from Elon Musk. I then used one of [HuggingFace's](https://huggingface.co/models) pre-trained sentiment classification models and [BERTopic](https://maartengr.github.io/BERTopic/index.html) to extract and visualize key themes.
 I have also developed an RShiny dashboard for this project to hone my interactive visualization skills. 
 
-![Dashboard screenshot](fig/dash_screenshot.jpeg)
+![Dashboard screenshot](fig/dashboard_screenshot.png)
 
 ## Note on utility and future projects
 BERTopic can accommodate ["online topic modelling"](https://maartengr.github.io/BERTopic/getting_started/online/online.html) (i.e. incrementally adjusts topics with new data), and the results in this project have shown the model to be qualitatively coherent (lacking a labelled dataset, I am unable to compute the exact accuracy of clustering/classification). It would not be difficult to expand this work to a more regular, (semi-)automated pipeline to *monitor social media content* around a particular hashtag/person/theme and to extract insight or detect sudden changes. Suppose you were a news organisation looking to gauge interest in a particular recent event. Although social media isn't representative of general discourse around any given topic, taking data from Twitter, passing it through BERTopic and then setting the pipeline to regularly update the data and topics, would give you the data to assess at least some of the discussion around a theme or event. 
@@ -21,7 +21,10 @@ Note that the tweets analysed here are all from 1st August 2022 onwards.
 Given the time-range for our data, it should be no surprise that tweets about the war have formed their own distinct group of clusters. It's easy to see how topics 35, 36, 1 and 10 are linked. For interpreting this graph, recall that the most important number to count is the number of steps to take along the tree for two topics/leafs to connect.
 (Note that these are graphs generated with the help of BERTopic and there's far less you can do in terms of graph customization).
 
-![Hierarchy of our topics of interest](fig/hierarchical_select_top.png)
+![Hierarchy of our topics of interest](fig/hierarchical_cluster_screenshot.png)
+
+
+![Topics of Interest in 2D](fig/war_topics_screenshot.png)
 
 Topics 29 and 9 form an understandable cluster together as there were a significant number of tweets focused on Starlink's activity in Ukraine (and its commercial activity more generally), both by Musk and his followers. 
 The grouping of clusters 3 and 2 is more interesting: closer inspection of 2 revealed that it includes some tweets related to Twitter bots (something Musk has made a point of discussing openly recently), which would link it sensibly to topic 3; however some of the tweets were also referring to Tesla 'bots' (i.e. Tesla's robotics research and department). If we'd had a set of topic labels for each of these, it's very likely that BERTopic would misclassify the tweets in this particular topic. Topic two tweets range from :
